@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Clases - Seguimiento de Estudiantes</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1><i class="fas fa-graduation-cap"></i> Mis Clases</h1>
+            <div class="header-stats">
+                <span class="stat">
+                    <i class="fas fa-euro-sign"></i>
+                    <span id="total-mes">0</span>
+                    <small>€</small>
+                </span>
+                <span class="stat">
+                    <i class="fas fa-calendar-check"></i>
+                    <span id="clases-hoy">0</span>
+                    <small>clases</small>
+                </span>
+                <span class="stat">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="pagos-pendientes">0</span>
+                    <small>pendientes</small>
+                </span>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-view="lista">
+                <i class="fas fa-list"></i>
+                <span>Lista</span>
+            </button>
+            <button class="nav-btn" data-view="calendario">
+                <i class="fas fa-calendar"></i>
+                <span>Calendario</span>
+            </button>
+            <button class="nav-btn" data-view="pagos">
+                <i class="fas fa-credit-card"></i>
+                <span>Pagos</span>
+            </button>
+            <button class="nav-btn" data-view="estadisticas">
+                <i class="fas fa-chart-bar"></i>
+                <span>Stats</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Vista Lista -->
+            <section id="vista-lista" class="view-section active">
+                <div class="section-header">
+                    <h2>Mis Clases</h2>
+                    <button class="btn-primary" id="btn-nueva-clase">
+                        <i class="fas fa-plus"></i> Nueva Clase
+                    </button>
+                </div>
+                
+                <div class="filter-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="buscar-clase" placeholder="Buscar por estudiante...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filtro-pago">Estado de Pago:</label>
+                        <select id="filtro-pago">
+                            <option value="">Todos</option>
+                            <option value="pagado">Pagado</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="vencido">Vencido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="lista-clases" class="clases-container">
+                    <!-- Las clases se cargarán aquí dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Vista Calendario -->
+            <section id="vista-calendario" class="view-section">
+                <div class="calendar-header">
+                    <button id="btn-calendario-anterior"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="titulo-calendario"></h2>
+                    <button id="btn-calendario-siguiente"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                
+                <!-- Toggle Vista Mes/Semana -->
+                <div class="calendar-toggle">
+                    <button class="toggle-btn active" id="toggle-mes">
+                        <i class="fas fa-calendar-alt"></i> Mes
+                    </button>
+                    <button class="toggle-btn" id="toggle-semana">
+                        <i class="fas fa-calendar-week"></i> Semana
+                    </button>
+                </div>
+                
+                <div id="calendario" class="calendario-grid">
+                    <!-- El calendario se generará dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Vista Pagos -->
+            <section id="vista-pagos" class="view-section">
+                <div class="section-header">
+                    <h2>Control de Pagos</h2>
+                    <div class="pagos-stats">
+                        <span class="stat-pill success">
+                            <i class="fas fa-check"></i>
+                            <span id="pagos-al-dia">0</span> al día
+                        </span>
+                        <span class="stat-pill warning">
+                            <i class="fas fa-clock"></i>
+                            <span id="pagos-pendientes-count">0</span> pendientes
+                        </span>
+                        <span class="stat-pill danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="pagos-vencidos">0</span> vencidos
+                        </span>
+                    </div>
+                </div>
+
+                <div class="pagos-filters">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="todos">
+                            <i class="fas fa-list"></i> Todos
+                        </button>
+                        <button class="filter-tab" data-filter="pendientes">
+                            <i class="fas fa-clock"></i> Pendientes
+                        </button>
+                        <button class="filter-tab" data-filter="vencidos">
+                            <i class="fas fa-exclamation-triangle"></i> Vencidos
+                        </button>
+                        <button class="filter-tab" data-filter="pagados">
+                            <i class="fas fa-check"></i> Pagados
+                        </button>
+                    </div>
+                    
+                    <div class="date-filter">
+                        <label for="filtro-mes-pago">Mes:</label>
+                        <select id="filtro-mes-pago">
+                            <option value="">Todos los meses</option>
+                            <option value="0">Enero</option>
+                            <option value="1">Febrero</option>
+                            <option value="2">Marzo</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Mayo</option>
+                            <option value="5">Junio</option>
+                            <option value="6">Julio</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Septiembre</option>
+                            <option value="9">Octubre</option>
+                            <option value="10">Noviembre</option>
+                            <option value="11">Diciembre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="lista-pagos" class="pagos-container">
+                    <!-- Los pagos se cargarán aquí dinámicamente -->
+                </div>
+            </section>
+
+            <!-- Vista Estadísticas -->
+            <section id="vista-estadisticas" class="view-section">
+                <h2>Estadísticas</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-euro-sign"></i>
+                        <h3>Este Mes</h3>
+                        <p class="stat-value" id="ingresos-mes">€0</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Estudiantes</h3>
+                        <p class="stat-value" id="total-estudiantes">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock"></i>
+                        <h3>Total Clases</h3>
+                        <p class="stat-value" id="total-clases">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>Promedio/Clase</h3>
+                        <p class="stat-value" id="promedio-clase">€0</p>
+                    </div>
+                </div>
+
+                <div class="stats-section">
+                    <div class="pagos-stats-chart">
+                        <h3>Estadísticas de Pagos</h3>
+                        <div class="pagos-chart">
+                            <div class="chart-item">
+                                <div class="chart-bar">
+                                    <div class="bar-fill success" id="bar-pagados"></div>
+                                </div>
+                                <span>Pagados</span>
+                                <strong id="porcentaje-pagados">0%</strong>
+                            </div>
+                            <div class="chart-item">
+                                <div class="chart-bar">
+                                    <div class="bar-fill warning" id="bar-pendientes"></div>
+                                </div>
+                                <span>Pendientes</span>
+                                <strong id="porcentaje-pendientes">0%</strong>
+                            </div>
+                            <div class="chart-item">
+                                <div class="chart-bar">
+                                    <div class="bar-fill danger" id="bar-vencidos"></div>
+                                </div>
+                                <span>Vencidos</span>
+                                <strong id="porcentaje-vencidos">0%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="top-estudiantes">
+                        <h3>Top Estudiantes</h3>
+                        <div id="lista-top-estudiantes">
+                            <!-- Se generará dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal para Nueva/Editar Clase -->
+        <div id="modal-clase" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-titulo">Nueva Clase</h3>
+                    <button class="btn-close" id="btn-cerrar-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="form-clase" class="form-clase">
+                    <div class="form-group">
+                        <label for="estudiante">Estudiante</label>
+                        <input type="text" id="estudiante" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fecha">Fecha</label>
+                            <input type="date" id="fecha" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="hora">Hora</label>
+                            <input type="time" id="hora" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="precio">Precio (€)</label>
+                            <input type="number" id="precio" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estado-pago">Estado de Pago</label>
+                            <select id="estado-pago">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="pagado">Pagado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="grupo-fecha-pago" style="display: none;">
+                        <label for="fecha-pago">Fecha de Pago</label>
+                        <input type="date" id="fecha-pago">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea id="observaciones" rows="3" placeholder="Notas adicionales..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancelar">Cancelar</button>
+                        <button type="submit" class="btn-primary" id="btn-guardar">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Pago -->
+        <div id="modal-pago" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h3>Marcar como Pagado</h3>
+                    <button class="btn-close" id="btn-cerrar-modal-pago">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="pago-info">
+                        <h4 id="pago-estudiante">Estudiante</h4>
+                        <p id="pago-fecha-clase">Fecha de clase</p>
+                        <p id="pago-importe">Importe</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fecha-pago-modal">Fecha de Pago</label>
+                        <input type="date" id="fecha-pago-modal" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metodo-pago">Método de Pago</label>
+                        <select id="metodo-pago">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="bizum">Bizum</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notas-pago">Notas</label>
+                        <textarea id="notas-pago" rows="2" placeholder="Notas adicionales sobre el pago..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btn-cancelar-pago">Cancelar</button>
+                    <button type="button" class="btn-primary" id="btn-confirmar-pago">Confirmar Pago</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación -->
+        <div id="modal-confirmacion" class="modal">
+            <div class="modal-content modal-small">
+                <h3>¿Eliminar clase?</h3>
+                <p>Esta acción no se puede deshacer.</p>
+                <div class="form-actions">
+                    <button class="btn-secondary" id="btn-cancelar-eliminar">Cancelar</button>
+                    <button class="btn-danger" id="btn-confirmar-eliminar">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificaciones -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
