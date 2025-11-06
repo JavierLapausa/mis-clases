@@ -43,13 +43,13 @@
 
         <!-- Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-view="lista">
-                <i class="fas fa-list"></i>
-                <span>Lista</span>
-            </button>
-            <button class="nav-btn" data-view="calendario">
-                <i class="fas fa-calendar"></i>
+            <button class="nav-btn active" data-view="calendario">
+                <i class="fas fa-calendar-alt"></i>
                 <span>Calendario</span>
+            </button>
+            <button class="nav-btn" data-view="dia" style="display: none;">
+                <i class="fas fa-calendar-day"></i>
+                <span>Día</span>
             </button>
             <button class="nav-btn" data-view="estadisticas">
                 <i class="fas fa-chart-bar"></i>
@@ -59,35 +59,78 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Vista Lista -->
-            <section id="vista-lista" class="view-section active">
-                <div class="section-header">
-                    <h2>Mis Clases</h2>
-                    <button class="btn-primary" id="btn-nueva-clase">
-                        <i class="fas fa-plus"></i> Nueva Clase
+            <!-- Vista Calendario -->
+            <section id="vista-calendario" class="view-section active">
+                <div class="calendar-header">
+                    <div class="calendar-controls">
+                        <button id="btn-mes-anterior"><i class="fas fa-chevron-left"></i></button>
+                        <h2 id="mes-actual"></h2>
+                        <button id="btn-mes-siguiente"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    
+                    <div class="calendar-view-toggle">
+                        <button class="toggle-btn active" data-view="mes">
+                            <i class="fas fa-calendar"></i>
+                            <span>Mes</span>
+                        </button>
+                        <button class="toggle-btn" data-view="semana">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>Semana</span>
+                        </button>
+                    </div>
+                    
+                    <button class="btn-primary btn-nueva-clase" id="btn-nueva-clase">
+                        <i class="fas fa-plus"></i>
+                        <span class="desktop-only">Nueva Clase</span>
                     </button>
                 </div>
                 
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="buscar-clase" placeholder="Buscar por estudiante...">
+                <!-- Vista Mensual -->
+                <div id="vista-mensual" class="calendar-view active">
+                    <div id="calendario" class="calendario-grid">
+                        <!-- El calendario se generará dinámicamente -->
+                    </div>
                 </div>
-
-                <div id="lista-clases" class="clases-container">
-                    <!-- Las clases se cargarán aquí dinámicamente -->
+                
+                <!-- Vista Semanal -->
+                <div id="vista-semanal" class="calendar-view">
+                    <div id="semana-header" class="semana-dias">
+                        <!-- Los días de la semana se generarán aquí -->
+                    </div>
+                    <div id="calendario-semana" class="calendario-semana">
+                        <!-- Las clases de la semana se generarán aquí -->
+                    </div>
                 </div>
             </section>
 
-            <!-- Vista Calendario -->
-            <section id="vista-calendario" class="view-section">
-                <div class="calendar-header">
-                    <button id="btn-mes-anterior"><i class="fas fa-chevron-left"></i></button>
-                    <h2 id="mes-actual"></h2>
-                    <button id="btn-mes-siguiente"><i class="fas fa-chevron-right"></i></button>
+            <!-- Vista Día Específico -->
+            <section id="vista-dia" class="view-section">
+                <div class="dia-header">
+                    <button class="btn-back" id="btn-volver-calendario">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="dia-info">
+                        <h2 id="dia-titulo">Lunes, 6 de Noviembre</h2>
+                        <p id="dia-resumen">3 clases - €75</p>
+                    </div>
+                    <button class="btn-primary btn-nueva-clase-dia" id="btn-nueva-clase-dia">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
                 
-                <div id="calendario" class="calendario-grid">
-                    <!-- El calendario se generará dinámicamente -->
+                <div id="clases-del-dia" class="clases-del-dia">
+                    <!-- Las clases del día seleccionado aparecerán aquí -->
+                </div>
+                
+                <div class="dia-navegacion">
+                    <button class="btn-dia-nav" id="btn-dia-anterior">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button class="btn-dia-nav" id="btn-dia-siguiente">
+                        <span>Siguiente</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </section>
 
