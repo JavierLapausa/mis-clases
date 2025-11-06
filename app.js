@@ -1,4 +1,4 @@
-// ===== GESTIÓN DE DATOS MEJORADA ===== 
+// ===== GESTIÓN DE DATOS CORREGIDA ===== 
 class ClaseManager {
     constructor() {
         this.clases = this.cargarClases();
@@ -14,7 +14,6 @@ class ClaseManager {
         const datos = localStorage.getItem('misClases');
         if (datos) {
             const clases = JSON.parse(datos);
-            // Convertir strings de fecha a objetos Date
             return clases.map(clase => ({
                 ...clase,
                 fecha: new Date(clase.fecha)
@@ -79,20 +78,11 @@ class ClaseManager {
         return this.clases.filter(clase => {
             const fechaClase = new Date(clase.fecha);
             return fechaClase.toDateString() === fecha.toDateString();
-        }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha)); // ← ORDENAMIENTO POR HORA
-    }
-
-    // Obtener clases de una semana específica
-    obtenerClasesPorSemana(fecha) {
-        const inicioSemana = this.obtenerInicioSemana(fecha);
-        const finSemana = new Date(inicioSemana);
-        finSemana.setDate(finSemana.getDate() + 6);
-        finSemana.setHours(23, 59, 59, 999);
-
-        return this.clases.filter(clase => {
-            const fechaClase = new Date(clase.fecha);
-            return fechaClase >= inicioSemana && fechaClase <= finSemana;
-        }).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        }).sort((a, b) => {
+            const horaA = new Date(a.fecha).getHours() * 60 + new Date(a.fecha).getMinutes();
+            const horaB = new Date(b.fecha).getHours() * 60 + new Date(b.fecha).getMinutes();
+            return horaA - horaB;
+        });
     }
 
     // Obtener inicio de semana (lunes)
@@ -105,27 +95,24 @@ class ClaseManager {
         return d;
     }
 
-    // Actualizar todas las vistas
-    actualizarVistas() {
-        this.renderizarCalendario();
-        this.actualizarEstadisticas();
-        this.actualizarHeaderStats();
-        
-        // Si estamos en vista día, actualizar también
-        if (this.fechaSeleccionada) {
-            this.renderizarVistaDelDia(this.fechaSeleccionada);
-        }
-    }
-
-    // Inicializar la aplicación
+    // ===== INICIALIZACIÓN =====
     init() {
+        console.log('Inicializando app...');
         this.configurarEventListeners();
-        this.actualizarVistas();
         this.configurarFechaDefault();
+        this.actualizarVistas();
+        
+        // Configurar vista inicial
+        const toggleMes = document.querySelector('.toggle-btn[data-view="mes"]');
+        if (toggleMes) toggleMes.classList.add('active');
+        
+        console.log('App inicializada correctamente');
     }
 
-    // ===== EVENT LISTENERS ACTUALIZADOS =====
+    // ===== EVENT LISTENERS =====
     configurarEventListeners() {
+        console.log('Configurando event listeners...');
+
         // Navegación principal
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -133,21 +120,13 @@ class ClaseManager {
             });
         });
 
-        // Toggle vista calendario (mes/semana)
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.cambiarVistaCalendario(e.currentTarget.dataset.view);
+        // Modal nueva clase
+        const btnNuevaClase = document.getElementById('btn-nueva-clase');
+        if (btnNuevaClase) {
+            btnNuevaClase.addEventListener('click', () => {
+                this.abrirModalClase();
             });
-        });
-
-        // Modal nueva clase (botones múltiples)
-        document.getElementById('btn-nueva-clase').addEventListener('click', () => {
-            this.abrirModalClase();
-        });
-
-        document.getElementById('btn-nueva-clase-dia').addEventListener('click', () => {
-            this.abrirModalClase(this.fechaSeleccionada);
-        });
+        }
 
         // Cerrar modal
         document.getElementById('btn-cerrar-modal').addEventListener('click', () => {
@@ -182,17 +161,32 @@ class ClaseManager {
             this.navegarCalendario(1);
         });
 
-        // Vista día - navegación
-        document.getElementById('btn-volver-calendario').addEventListener('click', () => {
-            this.volverAlCalendario();
-        });
+        // Event listeners dinámicos con delegación
+        document.addEventListener('click', (e) => {
+            // Toggle vista calendario
+            if (e.target.closest('.toggle-btn')) {
+                const btn = e.target.closest('.toggle-btn');
+                const vista = btn.dataset.view;
+                this.cambiarVistaCalendario(vista);
+            }
 
-        document.getElementById('btn-dia-anterior').addEventListener('click', () => {
-            this.navegarDia(-1);
-        });
+            // Nueva clase desde vista día
+            if (e.target.closest('#btn-nueva-clase-dia')) {
+                this.abrirModalClase(this.fechaSeleccionada);
+            }
 
-        document.getElementById('btn-dia-siguiente').addEventListener('click', () => {
-            this.navegarDia(1);
+            // Volver al calendario
+            if (e.target.closest('#btn-volver-calendario')) {
+                this.volverAlCalendario();
+            }
+
+            // Navegación días
+            if (e.target.closest('#btn-dia-anterior')) {
+                this.navegarDia(-1);
+            }
+            if (e.target.closest('#btn-dia-siguiente')) {
+                this.navegarDia(1);
+            }
         });
 
         // Cerrar modal al hacer click fuera
@@ -202,10 +196,14 @@ class ClaseManager {
                 this.cerrarModalConfirmacion();
             }
         });
+
+        console.log('Event listeners configurados');
     }
 
-    // ===== NAVEGACIÓN MEJORADA =====
+    // ===== NAVEGACIÓN =====
     cambiarVista(vista) {
+        console.log('Cambiando a vista:', vista);
+        
         // Actualizar navegación activa
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -222,7 +220,7 @@ class ClaseManager {
         const targetView = document.getElementById(`vista-${vista}`);
         if (targetView) targetView.classList.add('active');
 
-        // Actualizar vista específica si es necesario
+        // Actualizar vista específica
         if (vista === 'calendario') {
             this.renderizarCalendario();
         } else if (vista === 'estadisticas') {
@@ -232,59 +230,71 @@ class ClaseManager {
 
     // Cambiar entre vista mensual y semanal
     cambiarVistaCalendario(vista) {
+        console.log('Cambiando vista calendario a:', vista);
         this.vistaCalendario = vista;
         
         // Actualizar botones toggle
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-view="${vista}"]`).classList.add('active');
+        const activeBtn = document.querySelector(`.toggle-btn[data-view="${vista}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
 
         // Mostrar vista correspondiente
         document.querySelectorAll('.calendar-view').forEach(view => {
             view.classList.remove('active');
         });
-        document.getElementById(`vista-${vista === 'mes' ? 'mensual' : 'semanal'}`).classList.add('active');
+        
+        const targetCalendarView = document.getElementById(`vista-${vista === 'mes' ? 'mensual' : 'semanal'}`);
+        if (targetCalendarView) {
+            targetCalendarView.classList.add('active');
+        }
 
         // Renderizar vista correspondiente
-        if (vista === 'mes') {
-            this.renderizarCalendarioMensual();
-        } else {
-            this.renderizarCalendarioSemanal();
-        }
+        this.renderizarCalendario();
     }
 
     // Navegar calendario (anterior/siguiente)
     navegarCalendario(direccion) {
         if (this.vistaCalendario === 'mes') {
             this.fechaCalendario.setMonth(this.fechaCalendario.getMonth() + direccion);
-            this.renderizarCalendarioMensual();
         } else {
             this.fechaCalendario.setDate(this.fechaCalendario.getDate() + (direccion * 7));
-            this.renderizarCalendarioSemanal();
         }
+        this.renderizarCalendario();
     }
 
-    // Mostrar vista día específico
+    // ===== VISTA DÍA =====
     mostrarVistaDelDia(fecha) {
-        this.fechaSeleccionada = new Date(fecha);
+        console.log('Mostrando vista del día:', fecha);
+        
+        if (typeof fecha === 'string') {
+            this.fechaSeleccionada = new Date(fecha + 'T12:00:00');
+        } else {
+            this.fechaSeleccionada = new Date(fecha);
+        }
         
         // Mostrar botón día en navegación
         const navDia = document.querySelector('[data-view="dia"]');
-        navDia.style.display = 'flex';
+        if (navDia) {
+            navDia.style.display = 'flex';
+        }
         
         // Cambiar a vista día
         this.cambiarVista('dia');
         
         // Renderizar vista del día
-        this.renderizarVistaDelDia(fecha);
+        this.renderizarVistaDelDia(this.fechaSeleccionada);
     }
 
-    // Volver al calendario desde vista día
     volverAlCalendario() {
+        console.log('Volviendo al calendario');
+        
         // Ocultar botón día en navegación
         const navDia = document.querySelector('[data-view="dia"]');
-        navDia.style.display = 'none';
+        if (navDia) {
+            navDia.style.display = 'none';
+        }
         
         // Cambiar a vista calendario
         this.cambiarVista('calendario');
@@ -292,15 +302,16 @@ class ClaseManager {
         this.fechaSeleccionada = null;
     }
 
-    // Navegar entre días en vista día
     navegarDia(direccion) {
         if (!this.fechaSeleccionada) return;
+        
+        console.log('Navegando día:', direccion);
         
         this.fechaSeleccionada.setDate(this.fechaSeleccionada.getDate() + direccion);
         this.renderizarVistaDelDia(this.fechaSeleccionada);
     }
 
-    // ===== RENDERIZADO DE CALENDARIO PRINCIPAL =====
+    // ===== RENDERIZADO =====
     renderizarCalendario() {
         if (this.vistaCalendario === 'mes') {
             this.renderizarCalendarioMensual();
@@ -309,10 +320,11 @@ class ClaseManager {
         }
     }
 
-    // ===== RENDERIZADO CALENDARIO MENSUAL =====
     renderizarCalendarioMensual() {
         const calendar = document.getElementById('calendario');
         const mesActual = document.getElementById('mes-actual');
+        
+        if (!calendar || !mesActual) return;
         
         // Actualizar título del mes
         const meses = [
@@ -321,11 +333,11 @@ class ClaseManager {
         ];
         mesActual.textContent = `${meses[this.fechaCalendario.getMonth()]} ${this.fechaCalendario.getFullYear()}`;
 
-        // Obtener primer día del mes y días en el mes
+        // Obtener datos del mes
         const primerDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), 1);
         const ultimoDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth() + 1, 0);
         const diasEnMes = ultimoDia.getDate();
-        const diaSemanaInicio = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1; // Lunes = 0
+        const diaSemanaInicio = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
 
         // Generar calendario
         let html = '';
@@ -348,11 +360,12 @@ class ClaseManager {
         // Días del mes actual
         for (let dia = 1; dia <= diasEnMes; dia++) {
             const fechaDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), dia);
-            const clasesDelDia = this.obtenerClasesPorFecha(fechaDia); // Ya ordenadas por hora
+            const clasesDelDia = this.obtenerClasesPorFecha(fechaDia);
             const esHoy = fechaDia.toDateString() === new Date().toDateString();
+            const fechaStr = fechaDia.toISOString().split('T')[0];
             
             html += `<div class="dia-calendario ${esHoy ? 'hoy' : ''} ${clasesDelDia.length > 0 ? 'tiene-clases' : ''}" 
-                          onclick="app.mostrarVistaDelDia('${fechaDia.toISOString().split('T')[0]}')">
+                          data-fecha="${fechaStr}">
                 <div class="dia-numero">${dia}</div>
                 ${clasesDelDia.map(clase => `
                     <div class="clase-calendario" title="${this.escaparHtml(clase.estudiante)} - €${clase.precio}">
@@ -363,7 +376,7 @@ class ClaseManager {
         }
 
         // Días del mes siguiente
-        const diasRestantes = 42 - (diaSemanaInicio + diasEnMes); // 6 semanas = 42 días
+        const diasRestantes = 42 - (diaSemanaInicio + diasEnMes);
         for (let dia = 1; dia <= diasRestantes; dia++) {
             html += `<div class="dia-calendario otro-mes">
                 <div class="dia-numero">${dia}</div>
@@ -371,21 +384,26 @@ class ClaseManager {
         }
 
         calendar.innerHTML = html;
+        
+        // Agregar event listeners
+        setTimeout(() => this.agregarEventListenersDias(), 100);
     }
 
-    // ===== RENDERIZADO CALENDARIO SEMANAL =====
     renderizarCalendarioSemanal() {
         const semanaHeader = document.getElementById('semana-header');
         const calendarioSemana = document.getElementById('calendario-semana');
         const mesActual = document.getElementById('mes-actual');
         
+        if (!semanaHeader || !calendarioSemana || !mesActual) return;
+        
         // Obtener inicio de semana
         const inicioSemana = this.obtenerInicioSemana(this.fechaCalendario);
         
         // Actualizar título
-        const inicioMes = inicioSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
         const finSemana = new Date(inicioSemana);
         finSemana.setDate(finSemana.getDate() + 6);
+        
+        const inicioMes = inicioSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
         const finMes = finSemana.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
         
         if (inicioMes === finMes) {
@@ -394,24 +412,25 @@ class ClaseManager {
             mesActual.textContent = `${inicioSemana.toLocaleDateString('es-ES', { month: 'short' })} - ${finSemana.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}`;
         }
 
-        // Generar cabeceras de días
+        // Cabeceras
         const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
         semanaHeader.innerHTML = diasSemana.map(dia => `
             <div class="dia-semana-nombre">${dia}</div>
         `).join('');
 
-        // Generar días de la semana
+        // Días de la semana
         let htmlSemana = '';
         for (let i = 0; i < 7; i++) {
             const fecha = new Date(inicioSemana);
             fecha.setDate(fecha.getDate() + i);
             
-            const clasesDelDia = this.obtenerClasesPorFecha(fecha); // Ya ordenadas por hora
+            const clasesDelDia = this.obtenerClasesPorFecha(fecha);
             const esHoy = fecha.toDateString() === new Date().toDateString();
             const esMesActual = fecha.getMonth() === this.fechaCalendario.getMonth();
+            const fechaStr = fecha.toISOString().split('T')[0];
             
             htmlSemana += `<div class="dia-semana ${esHoy ? 'hoy' : ''} ${!esMesActual ? 'otro-mes' : ''}" 
-                                onclick="app.mostrarVistaDelDia('${fecha.toISOString().split('T')[0]}')">
+                                data-fecha="${fechaStr}">
                 <div class="dia-numero-semana">${fecha.getDate()}</div>
                 ${clasesDelDia.map(clase => `
                     <div class="clase-semana" title="${this.escaparHtml(clase.estudiante)} - €${clase.precio}">
@@ -422,29 +441,43 @@ class ClaseManager {
         }
 
         calendarioSemana.innerHTML = htmlSemana;
+        
+        // Agregar event listeners
+        setTimeout(() => this.agregarEventListenersDiasSemana(), 100);
     }
 
-    // ===== RENDERIZADO VISTA DEL DÍA =====
     renderizarVistaDelDia(fecha) {
-        const fechaObj = new Date(fecha);
-        const clasesDelDia = this.obtenerClasesPorFecha(fechaObj); // Ya ordenadas por hora
+        const fechaObj = typeof fecha === 'string' ? new Date(fecha + 'T12:00:00') : new Date(fecha);
+        console.log('Renderizando vista del día:', fechaObj);
         
-        // Actualizar título del día
+        // Obtener clases del día ORDENADAS
+        const clasesDelDia = this.obtenerClasesPorFecha(fechaObj);
+        console.log('Clases ordenadas:', clasesDelDia);
+        
+        // Título
         const titulo = fechaObj.toLocaleDateString('es-ES', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
         });
-        document.getElementById('dia-titulo').textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
         
-        // Actualizar resumen
+        const tituloElement = document.getElementById('dia-titulo');
+        if (tituloElement) {
+            tituloElement.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+        }
+        
+        // Resumen
         const totalIngresos = clasesDelDia.reduce((total, clase) => total + clase.precio, 0);
-        document.getElementById('dia-resumen').textContent = 
-            `${clasesDelDia.length} ${clasesDelDia.length === 1 ? 'clase' : 'clases'} - €${totalIngresos.toFixed(2)}`;
+        const resumenElement = document.getElementById('dia-resumen');
+        if (resumenElement) {
+            resumenElement.textContent = 
+                `${clasesDelDia.length} ${clasesDelDia.length === 1 ? 'clase' : 'clases'} - €${totalIngresos.toFixed(2)}`;
+        }
         
-        // Renderizar clases del día
+        // Clases
         const container = document.getElementById('clases-del-dia');
+        if (!container) return;
         
         if (clasesDelDia.length === 0) {
             container.innerHTML = `
@@ -452,7 +485,7 @@ class ClaseManager {
                     <i class="fas fa-calendar-plus"></i>
                     <h3>No hay clases programadas</h3>
                     <p>Toca el botón + para agregar una clase</p>
-                    <button class="btn-primary" onclick="app.abrirModalClase('${fecha}')">
+                    <button class="btn-primary" onclick="app.abrirModalClase('${fechaObj.toISOString().split('T')[0]}')">
                         <i class="fas fa-plus"></i> Agregar Clase
                     </button>
                 </div>
@@ -461,7 +494,7 @@ class ClaseManager {
         }
 
         container.innerHTML = clasesDelDia.map(clase => `
-            <div class="clase-dia-card" onclick="app.editarClaseModal('${clase.id}')">
+            <div class="clase-dia-card">
                 <div class="clase-hora">${this.formatearHora(clase.fecha)}</div>
                 <div class="clase-dia-header">
                     <div>
@@ -477,10 +510,10 @@ class ClaseManager {
                 ` : ''}
                 
                 <div class="clase-acciones-dia">
-                    <button class="btn-accion" onclick="event.stopPropagation(); app.editarClaseModal('${clase.id}')" title="Editar">
+                    <button class="btn-accion" onclick="app.editarClaseModal('${clase.id}')" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-accion danger" onclick="event.stopPropagation(); app.eliminarClaseModal('${clase.id}')" title="Eliminar">
+                    <button class="btn-accion danger" onclick="app.eliminarClaseModal('${clase.id}')" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -488,36 +521,72 @@ class ClaseManager {
         `).join('');
     }
 
+    // Event listeners para días
+    agregarEventListenersDias() {
+        document.querySelectorAll('.dia-calendario[data-fecha]').forEach(dia => {
+            dia.addEventListener('click', (e) => {
+                const fecha = e.currentTarget.dataset.fecha;
+                if (fecha && !e.currentTarget.classList.contains('otro-mes')) {
+                    console.log('Click en día:', fecha);
+                    this.mostrarVistaDelDia(fecha);
+                }
+            });
+        });
+    }
+
+    agregarEventListenersDiasSemana() {
+        document.querySelectorAll('.dia-semana[data-fecha]').forEach(dia => {
+            dia.addEventListener('click', (e) => {
+                const fecha = e.currentTarget.dataset.fecha;
+                if (fecha && !e.currentTarget.classList.contains('otro-mes')) {
+                    console.log('Click en día semana:', fecha);
+                    this.mostrarVistaDelDia(fecha);
+                }
+            });
+        });
+    }
+
+    // ===== OTRAS FUNCIONES =====
+    actualizarVistas() {
+        this.renderizarCalendario();
+        this.actualizarEstadisticas();
+        this.actualizarHeaderStats();
+        
+        if (this.fechaSeleccionada) {
+            this.renderizarVistaDelDia(this.fechaSeleccionada);
+        }
+    }
+
     // ===== ESTADÍSTICAS =====
     actualizarEstadisticas() {
         const ahora = new Date();
         const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
         
-        // Clases e ingresos del mes
         const clasesDelMes = this.clases.filter(clase => clase.fecha >= inicioMes);
         const ingresosMes = clasesDelMes.reduce((total, clase) => total + clase.precio, 0);
-        
-        // Estudiantes únicos
         const estudiantesUnicos = new Set(this.clases.map(clase => clase.estudiante)).size;
-        
-        // Promedio por clase
         const promedioClase = this.clases.length > 0 ? 
             this.clases.reduce((total, clase) => total + clase.precio, 0) / this.clases.length : 0;
 
-        // Actualizar elementos
-        document.getElementById('ingresos-mes').textContent = `€${ingresosMes.toFixed(2)}`;
-        document.getElementById('total-estudiantes').textContent = estudiantesUnicos;
-        document.getElementById('total-clases').textContent = this.clases.length;
-        document.getElementById('promedio-clase').textContent = `€${promedioClase.toFixed(2)}`;
+        const elementos = {
+            'ingresos-mes': `€${ingresosMes.toFixed(2)}`,
+            'total-estudiantes': estudiantesUnicos,
+            'total-clases': this.clases.length,
+            'promedio-clase': `€${promedioClase.toFixed(2)}`
+        };
 
-        // Top estudiantes
+        Object.entries(elementos).forEach(([id, valor]) => {
+            const elemento = document.getElementById(id);
+            if (elemento) elemento.textContent = valor;
+        });
+
         this.renderizarTopEstudiantes();
     }
 
     renderizarTopEstudiantes() {
         const container = document.getElementById('lista-top-estudiantes');
+        if (!container) return;
         
-        // Agrupar por estudiante
         const estudiantesStats = {};
         this.clases.forEach(clase => {
             if (!estudiantesStats[clase.estudiante]) {
@@ -531,7 +600,6 @@ class ClaseManager {
             estudiantesStats[clase.estudiante].total += clase.precio;
         });
 
-        // Ordenar por total y tomar top 5
         const topEstudiantes = Object.values(estudiantesStats)
             .sort((a, b) => b.total - a.total)
             .slice(0, 5);
@@ -555,28 +623,28 @@ class ClaseManager {
         `).join('');
     }
 
-    // ===== HEADER STATS =====
     actualizarHeaderStats() {
         const ahora = new Date();
         const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
         const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
         
-        // Ingresos del mes
         const ingresosMes = this.clases
             .filter(clase => clase.fecha >= inicioMes)
             .reduce((total, clase) => total + clase.precio, 0);
         
-        // Clases de hoy
         const clasesHoy = this.clases.filter(clase => {
             const fechaClase = new Date(clase.fecha);
             return fechaClase.toDateString() === hoy.toDateString();
         }).length;
 
-        document.getElementById('total-mes').textContent = ingresosMes.toFixed(0);
-        document.getElementById('clases-hoy').textContent = clasesHoy;
+        const totalMesElement = document.getElementById('total-mes');
+        const clasesHoyElement = document.getElementById('clases-hoy');
+        
+        if (totalMesElement) totalMesElement.textContent = ingresosMes.toFixed(0);
+        if (clasesHoyElement) clasesHoyElement.textContent = clasesHoy;
     }
 
-    // ===== MODALES ACTUALIZADOS =====
+    // ===== MODALES =====
     abrirModalClase(fecha = null) {
         const modal = document.getElementById('modal-clase');
         const titulo = document.getElementById('modal-titulo');
@@ -585,7 +653,6 @@ class ClaseManager {
         titulo.textContent = 'Nueva Clase';
         this.limpiarFormulario();
         
-        // Si se especifica una fecha, usarla
         if (fecha) {
             if (typeof fecha === 'string') {
                 document.getElementById('fecha').value = fecha;
@@ -593,7 +660,6 @@ class ClaseManager {
                 document.getElementById('fecha').value = fecha.toISOString().split('T')[0];
             }
         } else if (this.fechaSeleccionada) {
-            // Si estamos en vista día, usar esa fecha
             document.getElementById('fecha').value = this.fechaSeleccionada.toISOString().split('T')[0];
         }
         
@@ -610,7 +676,6 @@ class ClaseManager {
         this.claseEditando = id;
         titulo.textContent = 'Editar Clase';
         
-        // Llenar formulario con datos existentes
         document.getElementById('estudiante').value = clase.estudiante;
         document.getElementById('fecha').value = clase.fecha.toISOString().split('T')[0];
         document.getElementById('hora').value = clase.fecha.toTimeString().split(':').slice(0,2).join(':');
@@ -646,7 +711,6 @@ class ClaseManager {
     // ===== FORMULARIOS =====
     limpiarFormulario() {
         document.getElementById('form-clase').reset();
-        // Establecer fecha actual por defecto
         const hoy = new Date();
         document.getElementById('fecha').value = hoy.toISOString().split('T')[0];
         document.getElementById('hora').value = '09:00';
@@ -657,18 +721,14 @@ class ClaseManager {
     }
 
     guardarClaseFormulario() {
-        const form = document.getElementById('form-clase');
-        const formData = new FormData(form);
-        
         const datosClase = {
-            estudiante: formData.get('estudiante') || document.getElementById('estudiante').value,
-            fecha: formData.get('fecha') || document.getElementById('fecha').value,
-            hora: formData.get('hora') || document.getElementById('hora').value,
-            precio: formData.get('precio') || document.getElementById('precio').value,
-            observaciones: formData.get('observaciones') || document.getElementById('observaciones').value
+            estudiante: document.getElementById('estudiante').value,
+            fecha: document.getElementById('fecha').value,
+            hora: document.getElementById('hora').value,
+            precio: document.getElementById('precio').value,
+            observaciones: document.getElementById('observaciones').value
         };
 
-        // Validar datos
         if (!datosClase.estudiante || !datosClase.fecha || !datosClase.hora || !datosClase.precio) {
             this.mostrarToast('Por favor completa todos los campos obligatorios', 'error');
             return;
@@ -679,7 +739,6 @@ class ClaseManager {
             return;
         }
 
-        // Guardar o editar
         if (this.claseEditando) {
             this.editarClase(this.claseEditando, datosClase);
         } else {
@@ -719,7 +778,6 @@ class ClaseManager {
         toastMessage.textContent = mensaje;
         toast.classList.add('show');
         
-        // Cambiar color según tipo
         if (tipo === 'error') {
             toast.style.background = '#dc2626';
         } else {
@@ -735,11 +793,10 @@ class ClaseManager {
 // ===== INICIALIZACIÓN =====
 let app;
 
-// Esperar a que se cargue el DOM
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM cargado, inicializando app...');
     app = new ClaseManager();
     
-    // Registrar Service Worker para PWA
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js')
             .then(registration => {
@@ -751,96 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ===== FUNCIONES GLOBALES PARA EVENTOS =====
-// Estas funciones son necesarias para los eventos onclick en el HTML
+// ===== FUNCIONES GLOBALES =====
 window.app = {
     editarClaseModal: (id) => app.editarClaseModal(id),
     eliminarClaseModal: (id) => app.eliminarClaseModal(id),
     abrirModalClase: (fecha) => app.abrirModalClase(fecha),
     mostrarVistaDelDia: (fecha) => app.mostrarVistaDelDia(fecha)
 };
-
-// ===== EXPORTAR DATOS =====
-function exportarCSV() {
-    if (app.clases.length === 0) {
-        app.mostrarToast('No hay clases para exportar', 'error');
-        return;
-    }
-
-    const csv = [
-        'Estudiante,Fecha,Hora,Precio,Observaciones',
-        ...app.clases.map(clase => {
-            const fecha = clase.fecha.toLocaleDateString('es-ES');
-            const hora = clase.fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            const observaciones = clase.observaciones.replace(/,/g, ';'); // Reemplazar comas
-            return `"${clase.estudiante}","${fecha}","${hora}",${clase.precio},"${observaciones}"`;
-        })
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `mis-clases-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    app.mostrarToast('Datos exportados correctamente');
-}
-
-// ===== BACKUP DE DATOS =====
-function respaldarDatos() {
-    const datos = {
-        clases: app.clases,
-        fechaRespaldo: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `respaldo-clases-${new Date().toISOString().split('T')[0]}.json`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    app.mostrarToast('Respaldo creado correctamente');
-}
-
-// ===== RESTAURAR DATOS =====
-function restaurarDatos() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const datos = JSON.parse(e.target.result);
-                    if (datos.clases && Array.isArray(datos.clases)) {
-                        if (confirm('¿Estás seguro de que quieres restaurar los datos? Esto reemplazará todas las clases actuales.')) {
-                            app.clases = datos.clases.map(clase => ({
-                                ...clase,
-                                fecha: new Date(clase.fecha)
-                            }));
-                            app.guardarClases();
-                            app.actualizarVistas();
-                            app.mostrarToast('Datos restaurados correctamente');
-                        }
-                    } else {
-                        app.mostrarToast('Archivo de respaldo inválido', 'error');
-                    }
-                } catch (error) {
-                    app.mostrarToast('Error al leer el archivo', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
-    input.click();
-}
