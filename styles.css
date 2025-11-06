@@ -80,14 +80,12 @@ body {
     border-radius: var(--border-radius);
 }
 
-/* ===== NAVEGACIÓN ACTUALIZADA ===== */
+/* ===== NAVEGACIÓN ===== */
 .bottom-nav {
     display: flex;
     background: var(--surface-color);
     border-top: 1px solid var(--border-color);
     box-shadow: var(--shadow);
-    position: sticky;
-    bottom: 0;
 }
 
 .nav-btn {
@@ -117,339 +115,6 @@ body {
 .nav-btn span {
     font-size: 0.75rem;
     font-weight: 500;
-}
-
-/* ===== HEADER DE CALENDARIO MEJORADO ===== */
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-lg);
-    flex-wrap: wrap;
-    gap: var(--spacing-md);
-}
-
-.calendar-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-}
-
-.calendar-controls button {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.calendar-controls button:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.calendar-view-toggle {
-    display: flex;
-    background: var(--background-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-
-.toggle-btn {
-    background: none;
-    border: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.toggle-btn.active {
-    background: var(--primary-color);
-    color: white;
-}
-
-.toggle-btn:not(.active):hover {
-    background: rgba(37, 99, 235, 0.1);
-    color: var(--primary-color);
-}
-
-.btn-nueva-clase {
-    white-space: nowrap;
-}
-
-/* ===== VISTAS DE CALENDARIO ===== */
-.calendar-view {
-    display: none;
-}
-
-.calendar-view.active {
-    display: block;
-}
-
-/* Vista mensual existente se mantiene */
-
-/* ===== VISTA SEMANAL ===== */
-.semana-dias {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--border-color);
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    overflow: hidden;
-    margin-bottom: 1px;
-}
-
-.dia-semana-nombre {
-    background: var(--primary-color);
-    color: white;
-    padding: var(--spacing-md);
-    text-align: center;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.calendario-semana {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background: var(--border-color);
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    overflow: hidden;
-    min-height: 300px;
-}
-
-.dia-semana {
-    background: var(--surface-color);
-    padding: var(--spacing-sm);
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 300px;
-}
-
-.dia-semana:hover {
-    background: rgba(37, 99, 235, 0.05);
-}
-
-.dia-semana.hoy {
-    background: rgba(37, 99, 235, 0.1);
-}
-
-.dia-semana.otro-mes {
-    background: var(--background-color);
-    color: var(--text-secondary);
-}
-
-.dia-numero-semana {
-    font-weight: 600;
-    margin-bottom: var(--spacing-sm);
-    font-size: 1.1rem;
-}
-
-.clase-semana {
-    background: var(--primary-color);
-    color: white;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.clase-semana:hover {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-}
-
-/* ===== VISTA DE DÍA ESPECÍFICO ===== */
-.dia-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.btn-back {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-back:hover {
-    background: var(--background-color);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.dia-info {
-    flex: 1;
-}
-
-.dia-info h2 {
-    margin: 0;
-    font-size: 1.3rem;
-    color: var(--text-primary);
-}
-
-.dia-info p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.btn-nueva-clase-dia {
-    padding: var(--spacing-sm);
-    min-width: 40px;
-}
-
-.clases-del-dia {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-xl);
-}
-
-.clase-dia-card {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: var(--spacing-lg);
-    box-shadow: var(--shadow);
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.clase-dia-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary-color);
-}
-
-.clase-dia-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: var(--spacing-md);
-}
-
-.clase-hora {
-    background: var(--primary-color);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: var(--spacing-sm);
-}
-
-.clase-estudiante-grande {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.clase-precio-grande {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--success-color);
-}
-
-.clase-observaciones-dia {
-    color: var(--text-secondary);
-    font-style: italic;
-    margin-bottom: var(--spacing-md);
-}
-
-.clase-acciones-dia {
-    display: flex;
-    gap: var(--spacing-sm);
-    justify-content: flex-end;
-}
-
-.dia-navegacion {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-xl);
-}
-
-.btn-dia-nav {
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex: 1;
-}
-
-.btn-dia-nav:first-child {
-    justify-content: flex-start;
-}
-
-.btn-dia-nav:last-child {
-    justify-content: flex-end;
-}
-
-.btn-dia-nav:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-/* ===== ESTADO VACÍO PARA DÍA ===== */
-.dia-vacio {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--text-secondary);
-}
-
-.dia-vacio i {
-    font-size: 3rem;
-    color: var(--border-color);
-    margin-bottom: var(--spacing-lg);
-}
-
-.dia-vacio h3 {
-    margin-bottom: var(--spacing-md);
-    color: var(--text-primary);
-}
-
-.dia-vacio button {
-    margin-top: var(--spacing-md);
 }
 
 /* ===== CONTENIDO PRINCIPAL ===== */
@@ -980,7 +645,7 @@ body {
     }
 }
 
-/* ===== RESPONSIVE MEJORADO ===== */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .app-header {
         padding: var(--spacing-md);
@@ -1001,118 +666,26 @@ body {
     
     .main-content {
         padding: var(--spacing-md);
-        padding-bottom: 100px; /* Espacio para navegación fija */
     }
     
-    /* Calendar Header Mobile */
-    .calendar-header {
+    .section-header {
         flex-direction: column;
-        align-items: stretch;
         gap: var(--spacing-md);
-    }
-    
-    .calendar-controls {
-        justify-content: center;
-    }
-    
-    .calendar-view-toggle {
-        order: -1;
-        justify-content: center;
-    }
-    
-    .btn-nueva-clase span.desktop-only {
-        display: none;
-    }
-    
-    .btn-nueva-clase {
-        padding: var(--spacing-sm);
-        min-width: 50px;
-        justify-content: center;
-    }
-    
-    /* Vista Mensual Mobile */
-    .calendario-grid .dia-calendario {
-        min-height: 80px;
-        padding: 0.25rem;
-    }
-    
-    .dia-numero {
-        font-size: 0.85rem;
-    }
-    
-    .clase-calendario {
-        font-size: 0.7rem;
-        padding: 1px 3px;
-        margin-bottom: 1px;
-    }
-    
-    /* Vista Semanal Mobile */
-    .calendario-semana {
-        min-height: 250px;
-    }
-    
-    .dia-semana {
-        min-height: 250px;
-        padding: 0.25rem;
-    }
-    
-    .dia-numero-semana {
-        font-size: 0.9rem;
-        margin-bottom: 0.25rem;
-    }
-    
-    .clase-semana {
-        font-size: 0.7rem;
-        padding: 2px 4px;
-        margin-bottom: 2px;
-    }
-    
-    /* Vista Día Mobile */
-    .dia-header {
-        flex-wrap: wrap;
-        gap: var(--spacing-sm);
-    }
-    
-    .dia-info h2 {
-        font-size: 1.1rem;
-    }
-    
-    .clase-dia-card {
-        padding: var(--spacing-md);
-    }
-    
-    .clase-dia-header {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-        align-items: flex-start;
-    }
-    
-    .clase-acciones-dia {
-        justify-content: flex-start;
-        width: 100%;
-    }
-    
-    .dia-navegacion {
-        position: fixed;
-        bottom: 70px; /* Arriba de la navegación */
-        left: var(--spacing-md);
-        right: var(--spacing-md);
-        background: var(--surface-color);
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-lg);
-        padding: var(--spacing-sm);
-    }
-    
-    /* Modal Mobile */
-    .modal-content {
-        width: 95%;
-        margin: var(--spacing-md);
-        max-height: calc(100vh - 2rem);
+        align-items: stretch;
     }
     
     .form-row {
         grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    .calendario-grid .dia-calendario {
+        min-height: 80px;
+        padding: 0.25rem;
     }
     
     .form-actions {
@@ -1122,193 +695,28 @@ body {
     .form-actions button {
         width: 100%;
     }
-    
-    /* Stats Mobile */
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--spacing-md);
-    }
-    
-    /* Bottom Navigation Fixed */
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        border-radius: 0;
-    }
-    
-    .nav-btn {
-        padding: var(--spacing-sm);
-    }
-    
-    .nav-btn span {
-        font-size: 0.7rem;
-    }
 }
 
 @media (max-width: 480px) {
-    /* Extra small mobile */
-    .calendar-controls h2 {
-        font-size: 1rem;
-    }
-    
-    .toggle-btn span {
-        display: none; /* Solo iconos en móvil muy pequeño */
-    }
-    
     .stats-grid {
         grid-template-columns: 1fr;
     }
     
-    .calendario-grid .dia-calendario {
-        min-height: 60px;
+    .clase-info {
+        flex-direction: column;
+        gap: var(--spacing-sm);
     }
     
-    .clase-calendario {
-        display: none; /* En móvil muy pequeño, solo mostrar punto */
+    .clase-header {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
     }
     
-    .dia-calendario.tiene-clases::after {
-        content: '';
-        position: absolute;
-        bottom: 4px;
-        right: 4px;
-        width: 6px;
-        height: 6px;
-        background: var(--primary-color);
-        border-radius: 50%;
+    .modal-content {
+        width: 95%;
+        margin: var(--spacing-md);
     }
-    
-    /* Vista semanal más compacta */
-    .calendario-semana {
-        min-height: 200px;
-    }
-    
-    .dia-semana {
-        min-height: 200px;
-    }
-    
-    /* Navegación de día más compacta */
-    .dia-navegacion {
-        bottom: 60px;
-    }
-    
-    .btn-dia-nav span {
-        display: none;
-    }
-}
-
-/* ===== LANDSCAPE MOBILE ===== */
-@media (max-width: 768px) and (orientation: landscape) {
-    .main-content {
-        padding: var(--spacing-sm);
-        padding-bottom: 80px;
-    }
-    
-    .calendar-header {
-        flex-direction: row;
-        align-items: center;
-    }
-    
-    .calendar-view-toggle {
-        order: 0;
-    }
-    
-    .calendario-grid .dia-calendario {
-        min-height: 60px;
-    }
-    
-    .calendario-semana {
-        min-height: 180px;
-    }
-    
-    .dia-semana {
-        min-height: 180px;
-    }
-}
-
-/* ===== UTILIDADES ADICIONALES ===== */
-.desktop-only {
-    display: inline;
-}
-
-@media (max-width: 768px) {
-    .desktop-only {
-        display: none;
-    }
-}
-
-.mobile-only {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .mobile-only {
-        display: inline;
-    }
-}
-
-/* ===== MEJORAS DE ACCESIBILIDAD ===== */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* ===== TEMA OSCURO (PREPARADO PARA FUTURO) ===== */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background-color: #0f172a;
-        --surface-color: #1e293b;
-        --text-primary: #f1f5f9;
-        --text-secondary: #94a3b8;
-        --border-color: #334155;
-    }
-}
-
-/* ===== ESTADOS DE CARGA ===== */
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-}
-
-@keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-/* ===== MEJORAS DE PERFORMANCE ===== */
-.calendario-grid,
-.calendario-semana {
-    contain: layout style;
-}
-
-.clase-card,
-.clase-dia-card {
-    contain: layout style paint;
-}
-
-/* ===== SCROLL SUAVE ===== */
-html {
-    scroll-behavior: smooth;
-}
-
-/* ===== FOCUS VISIBLE ===== */
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
 }
 
 /* ===== ESTADOS VACÍOS ===== */

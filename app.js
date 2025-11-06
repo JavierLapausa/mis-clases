@@ -1,457 +1,83 @@
-// ===== APP DE CLASES - VERSIÓN ROBUSTA =====
-console.log('🚀 Iniciando aplicación...');
-
+// ===== GESTIÓN DE DATOS CORREGIDA ===== 
 class ClaseManager {
     constructor() {
         this.clases = this.cargarClases();
         this.claseEditando = null;
         this.fechaCalendario = new Date();
         this.fechaSeleccionada = null;
-        this.vistaCalendario = 'mes';
+        this.claseAEliminar = null;
         this.init();
     }
 
+    // Cargar clases desde localStorage
     cargarClases() {
-        try {
-            const datos = localStorage.getItem('misClases');
-            if (datos) {
-                const clases = JSON.parse(datos);
-                return clases.map(clase => ({
-                    ...clase,
-                    fecha: new Date(clase.fecha)
-                }));
-            }
-        } catch (e) {
-            console.warn('Error cargando clases:', e);
+        const datos = localStorage.getItem('misClases');
+        if (datos) {
+            const clases = JSON.parse(datos);
+            return clases.map(clase => ({
+                ...clase,
+                fecha: new Date(clase.fecha)
+            }));
         }
         return [];
     }
 
+    // Guardar clases en localStorage
     guardarClases() {
-        try {
-            localStorage.setItem('misClases', JSON.stringify(this.clases));
-            console.log('✅ Clases guardadas');
-        } catch (e) {
-            console.error('Error guardando clases:', e);
-        }
+        localStorage.setItem('misClases', JSON.stringify(this.clases));
     }
 
-    // ===== INICIALIZACIÓN ROBUSTA =====
-    init() {
-        console.log('🔧 Inicializando...');
-        
-        // Esperar a que el DOM esté completamente cargado
-        setTimeout(() => {
-            this.configurarEventListeners();
-            this.renderizarCalendario();
-            this.actualizarEstadisticas();
-            console.log('✅ App inicializada correctamente');
-        }, 100);
+    // Generar ID único
+    generarId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
-    // ===== EVENT LISTENERS SEGUROS =====
-    configurarEventListeners() {
-        console.log('🎯 Configurando event listeners...');
-
-        // Función auxiliar segura
-        const onClick = (selector, handler) => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(el => {
-                if (el) {
-                    el.addEventListener('click', handler);
-                    console.log(`✅ Listener agregado: ${selector}`);
-                }
-            });
+    // Agregar nueva clase
+    agregarClase(datosClase) {
+        const nuevaClase = {
+            id: this.generarId(),
+            estudiante: datosClase.estudiante,
+            fecha: new Date(datosClase.fecha + 'T' + datosClase.hora),
+            precio: parseFloat(datosClase.precio),
+            observaciones: datosClase.observaciones || ''
         };
 
-        // Navegación principal
-        onClick('.nav-btn', (e) => {
-            const vista = e.currentTarget.dataset.view;
-            if (vista) this.cambiarVista(vista);
-        });
-
-        // Toggle mes/semana - USANDO DELEGACIÓN SEGURA
-        document.addEventListener('click', (e) => {
-            // Toggle vista calendario
-            if (e.target.closest('.toggle-btn')) {
-                const btn = e.target.closest('.toggle-btn');
-                const vista = btn.dataset.view;
-                if (vista) {
-                    console.log('🔄 Cambiando vista a:', vista);
-                    this.cambiarVistaCalendario(vista);
-                }
-            }
-
-            // Clicks en días del calendario
-            if (e.target.closest('.dia-calendario[data-fecha]')) {
-                const dia = e.target.closest('.dia-calendario[data-fecha]');
-                const fecha = dia.dataset.fecha;
-                if (fecha && !dia.classList.contains('otro-mes')) {
-                    console.log('📅 Click en día:', fecha);
-                    this.mostrarVistaDelDia(fecha);
-                }
-            }
-
-            // Clicks en días de la semana
-            if (e.target.closest('.dia-semana[data-fecha]')) {
-                const dia = e.target.closest('.dia-semana[data-fecha]');
-                const fecha = dia.dataset.fecha;
-                if (fecha && !dia.classList.contains('otro-mes')) {
-                    console.log('📅 Click en día semana:', fecha);
-                    this.mostrarVistaDelDia(fecha);
-                }
-            }
-
-            // Botón nueva clase
-            if (e.target.closest('#btn-nueva-clase')) {
-                this.abrirModalClase();
-            }
-
-            // Botón volver al calendario
-            if (e.target.closest('#btn-volver-calendario')) {
-                this.volverAlCalendario();
-            }
-
-            // Navegación de días
-            if (e.target.closest('#btn-dia-anterior')) {
-                this.navegarDia(-1);
-            }
-            if (e.target.closest('#btn-dia-siguiente')) {
-                this.navegarDia(1);
-            }
-
-            // Navegación del calendario
-            if (e.target.closest('#btn-mes-anterior')) {
-                this.navegarCalendario(-1);
-            }
-            if (e.target.closest('#btn-mes-siguiente')) {
-                this.navegarCalendario(1);
-            }
-
-            // Cerrar modales
-            if (e.target.classList.contains('modal')) {
-                this.cerrarModal();
-                this.cerrarModalConfirmacion();
-            }
-            if (e.target.closest('#btn-cerrar-modal') || e.target.closest('#btn-cancelar')) {
-                this.cerrarModal();
-            }
-            if (e.target.closest('#btn-cancelar-eliminar')) {
-                this.cerrarModalConfirmacion();
-            }
-            if (e.target.closest('#btn-confirmar-eliminar')) {
-                this.confirmarEliminar();
-            }
-        });
-
-        // Formulario - event listener directo
-        setTimeout(() => {
-            const form = document.getElementById('form-clase');
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.guardarClaseFormulario();
-                });
-                console.log('✅ Formulario configurado');
-            }
-        }, 200);
-
-        console.log('✅ Event listeners configurados');
+        this.clases.push(nuevaClase);
+        this.guardarClases();
+        this.actualizarVistas();
+        this.mostrarToast('Clase agregada correctamente');
     }
 
-    // ===== NAVEGACIÓN =====
-    cambiarVista(vista) {
-        console.log('🔄 Cambiando a vista:', vista);
-
-        // Actualizar navegación
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        const navBtn = document.querySelector(`[data-view="${vista}"]`);
-        if (navBtn) navBtn.classList.add('active');
-
-        // Mostrar vista
-        document.querySelectorAll('.view-section').forEach(section => {
-            section.classList.remove('active');
-        });
-        
-        const targetView = document.getElementById(`vista-${vista}`);
-        if (targetView) {
-            targetView.classList.add('active');
-            
-            if (vista === 'calendario') {
-                setTimeout(() => this.renderizarCalendario(), 100);
-            } else if (vista === 'estadisticas') {
-                setTimeout(() => this.actualizarEstadisticas(), 100);
-            }
+    // Editar clase existente
+    editarClase(id, datosClase) {
+        const index = this.clases.findIndex(clase => clase.id === id);
+        if (index !== -1) {
+            this.clases[index] = {
+                ...this.clases[index],
+                estudiante: datosClase.estudiante,
+                fecha: new Date(datosClase.fecha + 'T' + datosClase.hora),
+                precio: parseFloat(datosClase.precio),
+                observaciones: datosClase.observaciones || ''
+            };
+            this.guardarClases();
+            this.actualizarVistas();
+            this.mostrarToast('Clase actualizada correctamente');
         }
     }
 
-    cambiarVistaCalendario(vista) {
-        console.log('📅 Cambiando vista calendario a:', vista);
-        this.vistaCalendario = vista;
-        
-        // Actualizar botones
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        const activeBtn = document.querySelector(`.toggle-btn[data-view="${vista}"]`);
-        if (activeBtn) activeBtn.classList.add('active');
-
-        // Mostrar vista correspondiente
-        document.querySelectorAll('.calendar-view').forEach(view => {
-            view.classList.remove('active');
-        });
-        
-        const targetView = document.getElementById(`vista-${vista === 'mes' ? 'mensual' : 'semanal'}`);
-        if (targetView) targetView.classList.add('active');
-
-        // Renderizar
-        setTimeout(() => this.renderizarCalendario(), 100);
+    // Eliminar clase
+    eliminarClase(id) {
+        this.clases = this.clases.filter(clase => clase.id !== id);
+        this.guardarClases();
+        this.actualizarVistas();
+        this.mostrarToast('Clase eliminada correctamente');
     }
 
-    navegarCalendario(direccion) {
-        if (this.vistaCalendario === 'mes') {
-            this.fechaCalendario.setMonth(this.fechaCalendario.getMonth() + direccion);
-        } else {
-            this.fechaCalendario.setDate(this.fechaCalendario.getDate() + (direccion * 7));
-        }
-        this.renderizarCalendario();
-    }
-
-    // ===== RENDERIZADO =====
-    renderizarCalendario() {
-        console.log('🎨 Renderizando calendario...');
-        
-        if (this.vistaCalendario === 'mes') {
-            this.renderizarCalendarioMensual();
-        } else {
-            this.renderizarCalendarioSemanal();
-        }
-    }
-
-    renderizarCalendarioMensual() {
-        const calendar = document.getElementById('calendario');
-        const mesActual = document.getElementById('mes-actual');
-        
-        if (!calendar || !mesActual) {
-            console.warn('❌ Elementos del calendario no encontrados');
-            return;
-        }
-
-        console.log('📅 Renderizando vista mensual...');
-        
-        // Título del mes
-        const meses = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-        ];
-        mesActual.textContent = `${meses[this.fechaCalendario.getMonth()]} ${this.fechaCalendario.getFullYear()}`;
-
-        // Calcular días del mes
-        const primerDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), 1);
-        const ultimoDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth() + 1, 0);
-        const diasEnMes = ultimoDia.getDate();
-        const diaSemanaInicio = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
-
-        let html = '';
-        
-        // Cabeceras
-        const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        diasSemana.forEach(dia => {
-            html += `<div class="dia-semana">${dia}</div>`;
-        });
-
-        // Días del mes anterior (grises)
-        const ultimoDiaMesAnterior = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), 0).getDate();
-        for (let i = diaSemanaInicio - 1; i >= 0; i--) {
-            html += `<div class="dia-calendario otro-mes">
-                <div class="dia-numero">${ultimoDiaMesAnterior - i}</div>
-            </div>`;
-        }
-
-        // Días del mes actual
-        for (let dia = 1; dia <= diasEnMes; dia++) {
-            const fechaDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), dia);
-            const clasesDelDia = this.obtenerClasesPorFecha(fechaDia);
-            const esHoy = fechaDia.toDateString() === new Date().toDateString();
-            const fechaStr = fechaDia.toISOString().split('T')[0];
-            
-            html += `<div class="dia-calendario ${esHoy ? 'hoy' : ''} ${clasesDelDia.length > 0 ? 'tiene-clases' : ''}" 
-                          data-fecha="${fechaStr}">
-                <div class="dia-numero">${dia}</div>
-                ${clasesDelDia.map(clase => `
-                    <div class="clase-calendario" title="${clase.estudiante} - €${clase.precio}">
-                        ${this.formatearHora(clase.fecha)} ${clase.estudiante}
-                    </div>
-                `).join('')}
-            </div>`;
-        }
-
-        // Días del mes siguiente (grises)
-        const diasRestantes = 42 - (diaSemanaInicio + diasEnMes);
-        for (let dia = 1; dia <= diasRestantes; dia++) {
-            html += `<div class="dia-calendario otro-mes">
-                <div class="dia-numero">${dia}</div>
-            </div>`;
-        }
-
-        calendar.innerHTML = html;
-        console.log('✅ Calendario mensual renderizado');
-    }
-
-    renderizarCalendarioSemanal() {
-        const semanaHeader = document.getElementById('semana-header');
-        const calendarioSemana = document.getElementById('calendario-semana');
-        const mesActual = document.getElementById('mes-actual');
-        
-        if (!semanaHeader || !calendarioSemana || !mesActual) {
-            console.warn('❌ Elementos del calendario semanal no encontrados');
-            return;
-        }
-
-        console.log('📋 Renderizando vista semanal...');
-
-        // Obtener inicio de semana (lunes)
-        const inicioSemana = this.obtenerInicioSemana(this.fechaCalendario);
-        
-        // Título
-        mesActual.textContent = `Semana del ${inicioSemana.toLocaleDateString('es-ES')}`;
-
-        // Cabeceras
-        const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        semanaHeader.innerHTML = diasSemana.map(dia => `
-            <div class="dia-semana-nombre">${dia}</div>
-        `).join('');
-
-        // Días de la semana
-        let htmlSemana = '';
-        for (let i = 0; i < 7; i++) {
-            const fecha = new Date(inicioSemana);
-            fecha.setDate(fecha.getDate() + i);
-            
-            const clasesDelDia = this.obtenerClasesPorFecha(fecha);
-            const esHoy = fecha.toDateString() === new Date().toDateString();
-            const fechaStr = fecha.toISOString().split('T')[0];
-            
-            htmlSemana += `<div class="dia-semana ${esHoy ? 'hoy' : ''}" data-fecha="${fechaStr}">
-                <div class="dia-numero-semana">${fecha.getDate()}</div>
-                ${clasesDelDia.map(clase => `
-                    <div class="clase-semana" title="${clase.estudiante} - €${clase.precio}">
-                        ${this.formatearHora(clase.fecha)} ${clase.estudiante}
-                    </div>
-                `).join('')}
-            </div>`;
-        }
-
-        calendarioSemana.innerHTML = htmlSemana;
-        console.log('✅ Calendario semanal renderizado');
-    }
-
-    // ===== VISTA DÍA =====
-    mostrarVistaDelDia(fecha) {
-        console.log('📋 Mostrando vista del día:', fecha);
-        
-        this.fechaSeleccionada = new Date(fecha + 'T12:00:00');
-        
-        // Mostrar botón día en navegación
-        const navDia = document.querySelector('[data-view="dia"]');
-        if (navDia) navDia.style.display = 'flex';
-        
-        this.cambiarVista('dia');
-        
-        setTimeout(() => this.renderizarVistaDelDia(this.fechaSeleccionada), 100);
-    }
-
-    volverAlCalendario() {
-        console.log('↩️ Volviendo al calendario');
-        
-        const navDia = document.querySelector('[data-view="dia"]');
-        if (navDia) navDia.style.display = 'none';
-        
-        this.fechaSeleccionada = null;
-        this.cambiarVista('calendario');
-    }
-
-    navegarDia(direccion) {
-        if (!this.fechaSeleccionada) return;
-        
-        this.fechaSeleccionada.setDate(this.fechaSeleccionada.getDate() + direccion);
-        this.renderizarVistaDelDia(this.fechaSeleccionada);
-    }
-
-    renderizarVistaDelDia(fecha) {
-        console.log('🎨 Renderizando vista del día:', fecha);
-        
-        const clasesDelDia = this.obtenerClasesPorFecha(fecha);
-        
-        // Título
-        const titulo = fecha.toLocaleDateString('es-ES', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        });
-        
-        const tituloElement = document.getElementById('dia-titulo');
-        if (tituloElement) {
-            tituloElement.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
-        }
-        
-        // Resumen
-        const totalIngresos = clasesDelDia.reduce((total, clase) => total + clase.precio, 0);
-        const resumenElement = document.getElementById('dia-resumen');
-        if (resumenElement) {
-            resumenElement.textContent = 
-                `${clasesDelDia.length} ${clasesDelDia.length === 1 ? 'clase' : 'clases'} - €${totalIngresos.toFixed(2)}`;
-        }
-        
-        // Lista de clases
-        const container = document.getElementById('clases-del-dia');
-        if (!container) return;
-        
-        if (clasesDelDia.length === 0) {
-            container.innerHTML = `
-                <div class="dia-vacio">
-                    <i class="fas fa-calendar-plus"></i>
-                    <h3>No hay clases programadas</h3>
-                    <p>Toca el botón + para agregar una clase</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = clasesDelDia.map(clase => `
-            <div class="clase-dia-card">
-                <div class="clase-hora">${this.formatearHora(clase.fecha)}</div>
-                <div class="clase-dia-header">
-                    <div>
-                        <div class="clase-estudiante-grande">${clase.estudiante}</div>
-                        <div class="clase-precio-grande">€${clase.precio.toFixed(2)}</div>
-                    </div>
-                </div>
-                ${clase.observaciones ? `
-                    <div class="clase-observaciones-dia">${clase.observaciones}</div>
-                ` : ''}
-                <div class="clase-acciones-dia">
-                    <button class="btn-accion" onclick="app.editarClaseModal('${clase.id}')" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-accion danger" onclick="app.eliminarClaseModal('${clase.id}')" title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-
-        console.log('✅ Vista del día renderizada');
-    }
-
-    // ===== UTILIDADES =====
+    // Obtener clases de una fecha específica (ORDENADAS POR HORA)
     obtenerClasesPorFecha(fecha) {
         return this.clases.filter(clase => {
-            return new Date(clase.fecha).toDateString() === fecha.toDateString();
+            const fechaClase = new Date(clase.fecha);
+            return fechaClase.toDateString() === fecha.toDateString();
         }).sort((a, b) => {
             const horaA = new Date(a.fecha).getHours() * 60 + new Date(a.fecha).getMinutes();
             const horaB = new Date(b.fecha).getHours() * 60 + new Date(b.fecha).getMinutes();
@@ -459,13 +85,469 @@ class ClaseManager {
         });
     }
 
-    obtenerInicioSemana(fecha) {
-        const d = new Date(fecha);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        d.setDate(diff);
-        d.setHours(0, 0, 0, 0);
-        return d;
+    // ===== INICIALIZACIÓN =====
+    init() {
+        console.log('Inicializando app...');
+        this.configurarEventListeners();
+        this.configurarFechaDefault();
+        this.actualizarVistas();
+        this.configurarBusqueda();
+        console.log('App inicializada correctamente');
+    }
+
+    // ===== EVENT LISTENERS =====
+    configurarEventListeners() {
+        console.log('Configurando event listeners...');
+
+        // Navegación principal
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.cambiarVista(e.currentTarget.dataset.view);
+            });
+        });
+
+        // Modal nueva clase
+        const btnNuevaClase = document.getElementById('btn-nueva-clase');
+        if (btnNuevaClase) {
+            btnNuevaClase.addEventListener('click', () => {
+                this.abrirModalClase();
+            });
+        }
+
+        // Cerrar modal
+        const btnCerrarModal = document.getElementById('btn-cerrar-modal');
+        if (btnCerrarModal) {
+            btnCerrarModal.addEventListener('click', () => {
+                this.cerrarModal();
+            });
+        }
+
+        const btnCancelar = document.getElementById('btn-cancelar');
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', () => {
+                this.cerrarModal();
+            });
+        }
+
+        // Formulario clase
+        const formClase = document.getElementById('form-clase');
+        if (formClase) {
+            formClase.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.guardarClaseFormulario();
+            });
+        }
+
+        // Confirmación eliminar
+        const btnCancelarEliminar = document.getElementById('btn-cancelar-eliminar');
+        if (btnCancelarEliminar) {
+            btnCancelarEliminar.addEventListener('click', () => {
+                this.cerrarModalConfirmacion();
+            });
+        }
+
+        const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar');
+        if (btnConfirmarEliminar) {
+            btnConfirmarEliminar.addEventListener('click', () => {
+                this.confirmarEliminar();
+            });
+        }
+
+        // Navegación calendario
+        const btnMesAnterior = document.getElementById('btn-mes-anterior');
+        if (btnMesAnterior) {
+            btnMesAnterior.addEventListener('click', () => {
+                this.navegarCalendario(-1);
+            });
+        }
+
+        const btnMesSiguiente = document.getElementById('btn-mes-siguiente');
+        if (btnMesSiguiente) {
+            btnMesSiguiente.addEventListener('click', () => {
+                this.navegarCalendario(1);
+            });
+        }
+
+        // Cerrar modal al hacer click fuera
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                this.cerrarModal();
+                this.cerrarModalConfirmacion();
+            }
+        });
+
+        console.log('Event listeners configurados');
+    }
+
+    // ===== NAVEGACIÓN =====
+    cambiarVista(vista) {
+        console.log('Cambiando a vista:', vista);
+        
+        // Actualizar navegación activa
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        const navBtn = document.querySelector(`[data-view="${vista}"]`);
+        if (navBtn) navBtn.classList.add('active');
+
+        // Mostrar vista correspondiente
+        document.querySelectorAll('.view-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        const targetView = document.getElementById(`vista-${vista}`);
+        if (targetView) targetView.classList.add('active');
+
+        // Actualizar vista específica
+        if (vista === 'calendario') {
+            this.renderizarCalendario();
+        } else if (vista === 'estadisticas') {
+            this.actualizarEstadisticas();
+        } else if (vista === 'lista') {
+            this.renderizarListaClases();
+        }
+    }
+
+    navegarCalendario(direccion) {
+        this.fechaCalendario.setMonth(this.fechaCalendario.getMonth() + direccion);
+        this.renderizarCalendario();
+    }
+
+    // ===== BÚSQUEDA =====
+    configurarBusqueda() {
+        const buscarInput = document.getElementById('buscar-clase');
+        if (buscarInput) {
+            buscarInput.addEventListener('input', (e) => {
+                this.filtrarClases(e.target.value);
+            });
+        }
+    }
+
+    filtrarClases(termino) {
+        const clasesFiltradas = this.clases.filter(clase => 
+            clase.estudiante.toLowerCase().includes(termino.toLowerCase())
+        );
+        this.renderizarListaClases(clasesFiltradas);
+    }
+
+    // ===== RENDERIZADO =====
+    actualizarVistas() {
+        this.renderizarListaClases();
+        this.renderizarCalendario();
+        this.actualizarEstadisticas();
+        this.actualizarHeaderStats();
+    }
+
+    renderizarListaClases(clasesParaMostrar = null) {
+        const container = document.getElementById('lista-clases');
+        if (!container) return;
+
+        const clases = clasesParaMostrar || this.clases;
+        
+        // Ordenar clases por fecha (más recientes primero)
+        const clasesOrdenadas = [...clases].sort((a, b) => b.fecha - a.fecha);
+
+        if (clasesOrdenadas.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3>No hay clases registradas</h3>
+                    <p>Comienza agregando tu primera clase</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = clasesOrdenadas.map(clase => `
+            <div class="clase-card">
+                <div class="clase-header">
+                    <div class="estudiante-nombre">${this.escaparHtml(clase.estudiante)}</div>
+                    <div class="clase-precio">€${clase.precio.toFixed(2)}</div>
+                </div>
+                <div class="clase-info">
+                    <span><i class="fas fa-calendar-day"></i> ${this.formatearFecha(clase.fecha)}</span>
+                    <span><i class="fas fa-clock"></i> ${this.formatearHora(clase.fecha)}</span>
+                </div>
+                ${clase.observaciones ? `<div class="clase-observaciones">${this.escaparHtml(clase.observaciones)}</div>` : ''}
+                <div class="clase-acciones">
+                    <button class="btn-accion" onclick="app.editarClaseModal('${clase.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-accion danger" onclick="app.eliminarClaseModal('${clase.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderizarCalendario() {
+        const container = document.getElementById('calendario');
+        const mesActualElement = document.getElementById('mes-actual');
+        if (!container || !mesActualElement) return;
+
+        // Actualizar título del mes
+        mesActualElement.textContent = this.fechaCalendario.toLocaleDateString('es-ES', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        // Obtener primer y último día del mes
+        const primerDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), 1);
+        const ultimoDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth() + 1, 0);
+        
+        // Ajustar para que la semana comience en lunes
+        const primerLunes = new Date(primerDia);
+        primerLunes.setDate(primerDia.getDate() - (primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1));
+
+        const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        
+        let html = diasSemana.map(dia => `<div class="dia-semana">${dia}</div>`).join('');
+
+        // Generar días del calendario
+        const fecha = new Date(primerLunes);
+        for (let i = 0; i < 42; i++) { // 6 semanas máximo
+            const esOtroMes = fecha.getMonth() !== this.fechaCalendario.getMonth();
+            const clasesDelDia = this.obtenerClasesPorFecha(fecha);
+            
+            html += `
+                <div class="dia-calendario ${esOtroMes ? 'otro-mes' : ''}" onclick="app.abrirModalClase('${fecha.toISOString().split('T')[0]}')">
+                    <div class="dia-numero">${fecha.getDate()}</div>
+                    ${clasesDelDia.map(clase => `
+                        <div class="clase-calendario">${this.escaparHtml(clase.estudiante)}</div>
+                    `).join('')}
+                </div>
+            `;
+            
+            fecha.setDate(fecha.getDate() + 1);
+        }
+
+        container.innerHTML = html;
+    }
+
+    actualizarEstadisticas() {
+        const ahora = new Date();
+        const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        
+        const ingresosMes = this.clases
+            .filter(clase => clase.fecha >= inicioMes)
+            .reduce((total, clase) => total + clase.precio, 0);
+        
+        const estudiantesUnicos = [...new Set(this.clases.map(clase => clase.estudiante))];
+        const totalClases = this.clases.length;
+        const promedioClase = totalClases > 0 ? ingresosMes / this.clases.filter(clase => clase.fecha >= inicioMes).length : 0;
+
+        // Actualizar elementos
+        const ingresosMesElement = document.getElementById('ingresos-mes');
+        const totalEstudiantesElement = document.getElementById('total-estudiantes');
+        const totalClasesElement = document.getElementById('total-clases');
+        const promedioClaseElement = document.getElementById('promedio-clase');
+        
+        if (ingresosMesElement) ingresosMesElement.textContent = `€${ingresosMes.toFixed(0)}`;
+        if (totalEstudiantesElement) totalEstudiantesElement.textContent = estudiantesUnicos.length;
+        if (totalClasesElement) totalClasesElement.textContent = totalClases;
+        if (promedioClaseElement) promedioClaseElement.textContent = `€${(promedioClase || 0).toFixed(0)}`;
+
+        this.renderizarTopEstudiantes();
+    }
+
+    renderizarTopEstudiantes() {
+        const container = document.getElementById('lista-top-estudiantes');
+        if (!container) return;
+        
+        const estudiantesStats = {};
+        this.clases.forEach(clase => {
+            if (!estudiantesStats[clase.estudiante]) {
+                estudiantesStats[clase.estudiante] = {
+                    nombre: clase.estudiante,
+                    clases: 0,
+                    total: 0
+                };
+            }
+            estudiantesStats[clase.estudiante].clases++;
+            estudiantesStats[clase.estudiante].total += clase.precio;
+        });
+
+        const topEstudiantes = Object.values(estudiantesStats)
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 5);
+
+        if (topEstudiantes.length === 0) {
+            container.innerHTML = '<p class="text-center">No hay datos disponibles</p>';
+            return;
+        }
+
+        container.innerHTML = topEstudiantes.map((estudiante, index) => `
+            <div class="estudiante-top">
+                <div class="estudiante-info">
+                    <div class="estudiante-ranking">${index + 1}</div>
+                    <div class="estudiante-datos">
+                        <h4>${this.escaparHtml(estudiante.nombre)}</h4>
+                        <p>${estudiante.clases} clases</p>
+                    </div>
+                </div>
+                <div class="estudiante-total">€${estudiante.total.toFixed(2)}</div>
+            </div>
+        `).join('');
+    }
+
+    actualizarHeaderStats() {
+        const ahora = new Date();
+        const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        
+        const ingresosMes = this.clases
+            .filter(clase => clase.fecha >= inicioMes)
+            .reduce((total, clase) => total + clase.precio, 0);
+        
+        const clasesHoy = this.clases.filter(clase => {
+            const fechaClase = new Date(clase.fecha);
+            return fechaClase.toDateString() === hoy.toDateString();
+        }).length;
+
+        const totalMesElement = document.getElementById('total-mes');
+        const clasesHoyElement = document.getElementById('clases-hoy');
+        
+        if (totalMesElement) totalMesElement.textContent = ingresosMes.toFixed(0);
+        if (clasesHoyElement) clasesHoyElement.textContent = clasesHoy;
+    }
+
+    // ===== MODALES =====
+    abrirModalClase(fecha = null) {
+        const modal = document.getElementById('modal-clase');
+        const titulo = document.getElementById('modal-titulo');
+        
+        if (!modal || !titulo) return;
+        
+        this.claseEditando = null;
+        titulo.textContent = 'Nueva Clase';
+        this.limpiarFormulario();
+        
+        if (fecha) {
+            if (typeof fecha === 'string') {
+                document.getElementById('fecha').value = fecha;
+            } else {
+                document.getElementById('fecha').value = fecha.toISOString().split('T')[0];
+            }
+        }
+        
+        modal.classList.add('show');
+    }
+
+    editarClaseModal(id) {
+        const clase = this.clases.find(c => c.id === id);
+        if (!clase) return;
+
+        const modal = document.getElementById('modal-clase');
+        const titulo = document.getElementById('modal-titulo');
+        
+        if (!modal || !titulo) return;
+        
+        this.claseEditando = id;
+        titulo.textContent = 'Editar Clase';
+        
+        document.getElementById('estudiante').value = clase.estudiante;
+        document.getElementById('fecha').value = clase.fecha.toISOString().split('T')[0];
+        document.getElementById('hora').value = clase.fecha.toTimeString().split(':').slice(0,2).join(':');
+        document.getElementById('precio').value = clase.precio;
+        document.getElementById('observaciones').value = clase.observaciones;
+        
+        modal.classList.add('show');
+    }
+
+    eliminarClaseModal(id) {
+        this.claseAEliminar = id;
+        const modalConfirmacion = document.getElementById('modal-confirmacion');
+        if (modalConfirmacion) {
+            modalConfirmacion.classList.add('show');
+        }
+    }
+
+    cerrarModal() {
+        const modal = document.getElementById('modal-clase');
+        if (modal) {
+            modal.classList.remove('show');
+            this.limpiarFormulario();
+            this.claseEditando = null;
+        }
+    }
+
+    cerrarModalConfirmacion() {
+        const modalConfirmacion = document.getElementById('modal-confirmacion');
+        if (modalConfirmacion) {
+            modalConfirmacion.classList.remove('show');
+            this.claseAEliminar = null;
+        }
+    }
+
+    confirmarEliminar() {
+        if (this.claseAEliminar) {
+            this.eliminarClase(this.claseAEliminar);
+            this.cerrarModalConfirmacion();
+        }
+    }
+
+    // ===== FORMULARIOS =====
+    limpiarFormulario() {
+        const formClase = document.getElementById('form-clase');
+        if (formClase) {
+            formClase.reset();
+            const hoy = new Date();
+            const fechaInput = document.getElementById('fecha');
+            const horaInput = document.getElementById('hora');
+            
+            if (fechaInput) fechaInput.value = hoy.toISOString().split('T')[0];
+            if (horaInput) horaInput.value = '09:00';
+        }
+    }
+
+    configurarFechaDefault() {
+        this.limpiarFormulario();
+    }
+
+    guardarClaseFormulario() {
+        const estudiante = document.getElementById('estudiante')?.value;
+        const fecha = document.getElementById('fecha')?.value;
+        const hora = document.getElementById('hora')?.value;
+        const precio = document.getElementById('precio')?.value;
+        const observaciones = document.getElementById('observaciones')?.value;
+
+        const datosClase = {
+            estudiante,
+            fecha,
+            hora,
+            precio,
+            observaciones
+        };
+
+        if (!datosClase.estudiante || !datosClase.fecha || !datosClase.hora || !datosClase.precio) {
+            this.mostrarToast('Por favor completa todos los campos obligatorios', 'error');
+            return;
+        }
+
+        if (parseFloat(datosClase.precio) <= 0) {
+            this.mostrarToast('El precio debe ser mayor a 0', 'error');
+            return;
+        }
+
+        if (this.claseEditando) {
+            this.editarClase(this.claseEditando, datosClase);
+        } else {
+            this.agregarClase(datosClase);
+        }
+
+        this.cerrarModal();
+    }
+
+    // ===== UTILIDADES =====
+    formatearFecha(fecha) {
+        return fecha.toLocaleDateString('es-ES', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     }
 
     formatearHora(fecha) {
@@ -475,44 +557,30 @@ class ClaseManager {
         });
     }
 
-    actualizarEstadisticas() {
-        console.log('📊 Actualizando estadísticas...');
-        // Implementación básica de estadísticas
-        const totalClases = this.clases.length;
-        const element = document.getElementById('total-clases');
-        if (element) element.textContent = totalClases;
+    escaparHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
     }
 
-    // ===== MODALES =====
-    abrirModalClase(fecha = null) {
-        console.log('📝 Abriendo modal de clase...');
-        // Implementación básica del modal
-    }
-
-    editarClaseModal(id) {
-        console.log('✏️ Editando clase:', id);
-    }
-
-    eliminarClaseModal(id) {
-        console.log('🗑️ Eliminando clase:', id);
-    }
-
-    cerrarModal() {
-        const modal = document.getElementById('modal-clase');
-        if (modal) modal.classList.remove('show');
-    }
-
-    cerrarModalConfirmacion() {
-        const modal = document.getElementById('modal-confirmacion');
-        if (modal) modal.classList.remove('show');
-    }
-
-    confirmarEliminar() {
-        console.log('✅ Confirmando eliminar');
-    }
-
-    guardarClaseFormulario() {
-        console.log('💾 Guardando clase...');
+    mostrarToast(mensaje, tipo = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        if (!toast || !toastMessage) return;
+        
+        toastMessage.textContent = mensaje;
+        toast.classList.add('show');
+        
+        if (tipo === 'error') {
+            toast.style.background = '#dc2626';
+        } else {
+            toast.style.background = '#059669';
+        }
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
     }
 }
 
@@ -520,20 +588,24 @@ class ClaseManager {
 let app;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 DOM cargado, inicializando...');
+    console.log('DOM cargado, inicializando app...');
+    app = new ClaseManager();
     
-    // Inicializar con retraso para asegurar que todo esté listo
-    setTimeout(() => {
-        app = new ClaseManager();
-    }, 500);
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('Service Worker registrado:', registration);
+            })
+            .catch(error => {
+                console.log('Error al registrar Service Worker:', error);
+            });
+    }
 });
 
 // ===== FUNCIONES GLOBALES =====
 window.app = {
-    editarClaseModal: (id) => app?.editarClaseModal?.(id),
-    eliminarClaseModal: (id) => app?.eliminarClaseModal?.(id),
-    abrirModalClase: (fecha) => app?.abrirModalClase?.(fecha),
-    mostrarVistaDelDia: (fecha) => app?.mostrarVistaDelDia?.(fecha)
+    editarClaseModal: (id) => app?.editarClaseModal(id),
+    eliminarClaseModal: (id) => app?.eliminarClaseModal(id),
+    abrirModalClase: (fecha) => app?.abrirModalClase(fecha)
 };
-
-console.log('✅ JavaScript cargado');

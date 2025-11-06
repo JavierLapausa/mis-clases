@@ -126,10 +126,10 @@ En el archivo `styles.css`, cambia las variables de color:
 
 ### Cambiar hora por defecto
 
-En `app.js`, busca `configurarFechaDefault()` y modifica:
+En `app.js`, busca la función `limpiarFormulario()` y modifica:
 
 ```javascript
-document.getElementById('hora').value = '10:00'; // Cambiar hora
+if (horaInput) horaInput.value = '10:00'; // Cambiar hora
 ```
 
 ## 📱 Crear Iconos
@@ -182,21 +182,10 @@ if ('Notification' in window) {
 
 ## 💾 Backup y Restauración
 
-### Exportar datos
-
-1. Ve a **Estadísticas**
-2. Toca **"Exportar CSV"** (función por implementar)
-3. O usa las funciones del navegador:
-
-```javascript
-// En consola del navegador
-localStorage.getItem('misClases'); // Ver datos
-```
-
 ### Hacer backup manual
 
 ```javascript
-// Ejecutar en consola del navegador
+// Ejecutar en consola del navegador (F12)
 const datos = {
     clases: JSON.parse(localStorage.getItem('misClases') || '[]'),
     fecha: new Date().toISOString()

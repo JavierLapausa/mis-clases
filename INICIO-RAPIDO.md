@@ -43,7 +43,7 @@ En `styles.css` modifica:
 ### Cambiar hora por defecto
 En `app.js` busca:
 ```javascript
-document.getElementById('hora').value = '09:00'; // Cambiar aquí
+if (horaInput) horaInput.value = '09:00'; // Cambiar aquí
 ```
 
 ## 🔧 Crear Iconos
