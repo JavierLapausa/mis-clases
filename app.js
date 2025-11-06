@@ -279,7 +279,8 @@ class ClaseManager {
         // Días del mes actual
         for (let dia = 1; dia <= diasEnMes; dia++) {
             const fechaDia = new Date(this.fechaCalendario.getFullYear(), this.fechaCalendario.getMonth(), dia);
-            const clasesDelDia = this.obtenerClasesPorFecha(fechaDia);
+            const clasesDelDia = this.obtenerClasesPorFecha(fechaDia)
+                .sort((a, b) => new Date(a.fecha) - new Date(b.fecha)); // ← ESTA ES LA LÍNEA NUEVA
             
             html += `<div class="dia-calendario" onclick="app.abrirModalClase('${fechaDia.toISOString().split('T')[0]}')">
                 <div class="dia-numero">${dia}</div>
