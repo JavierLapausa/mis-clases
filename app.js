@@ -17,9 +17,16 @@ class ClaseManager {
     // ===== GESTIÓN DE DATOS =====
     cargarClases() {
         try {
+            // Verificar que localStorage esté disponible
+            if (typeof(Storage) === "undefined") {
+                console.warn('localStorage no está disponible');
+                return [];
+            }
+            
             const datos = localStorage.getItem('misClases');
             if (datos) {
                 const clases = JSON.parse(datos);
+                console.log(`Cargadas ${clases.length} clases desde localStorage`);
                 return clases.map(clase => ({
                     ...clase,
                     fecha: new Date(clase.fecha),
@@ -32,6 +39,7 @@ class ClaseManager {
             }
         } catch (error) {
             console.error('Error cargando clases:', error);
+            alert('Error al cargar los datos. Se iniciará con datos vacíos.');
         }
         return [];
     }
@@ -255,11 +263,33 @@ class ClaseManager {
 
     // ===== INICIALIZACIÓN =====
     init() {
-        this.configurarEventListeners();
-        this.configurarFechaDefault();
-        this.actualizarVistas();
-        this.configurarBusqueda();
-        this.configurarFiltros();
+        console.log('Iniciando configuración de la aplicación...');
+        
+        // Verificar elementos críticos antes de continuar
+        const elementosCriticos = ['lista-clases', 'calendario'];
+        const faltantes = elementosCriticos.filter(id => !document.getElementById(id));
+        
+        if (faltantes.length > 0) {
+            console.error('Elementos críticos faltantes:', faltantes);
+            return;
+        }
+        
+        try {
+            this.configurarEventListeners();
+            this.configurarFechaDefault();
+            this.configurarBusqueda();
+            this.configurarFiltros();
+            
+            // Pequeño delay para asegurar que el DOM esté completamente listo
+            setTimeout(() => {
+                this.actualizarVistas();
+                console.log('Aplicación configurada correctamente');
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error en inicialización:', error);
+            alert('Error al configurar la aplicación: ' + error.message);
+        }
     }
 
     configurarEventListeners() {
@@ -392,21 +422,40 @@ class ClaseManager {
 
     // ===== NAVEGACIÓN =====
     cambiarVista(vista) {
-        // Actualizar navegación
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        const navBtn = document.querySelector(`[data-view="${vista}"]`);
-        if (navBtn) navBtn.classList.add('active');
+        console.log(`Cambiando a vista: ${vista}`);
+        
+        try {
+            // Actualizar navegación
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            const navBtn = document.querySelector(`[data-view="${vista}"]`);
+            if (navBtn) navBtn.classList.add('active');
 
-        // Mostrar vista
-        document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
-        const targetView = document.getElementById(`vista-${vista}`);
-        if (targetView) targetView.classList.add('active');
+            // Mostrar vista
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            const targetView = document.getElementById(`vista-${vista}`);
+            if (targetView) {
+                targetView.classList.add('active');
+            } else {
+                console.error(`Vista no encontrada: vista-${vista}`);
+                return;
+            }
 
-        // Actualizar contenido
-        if (vista === 'calendario') this.renderizarCalendario();
-        else if (vista === 'estadisticas') this.actualizarEstadisticas();
-        else if (vista === 'lista') this.renderizarListaClases();
-        else if (vista === 'pagos') this.renderizarVistaPagos();
+            // Actualizar contenido
+            if (vista === 'calendario') {
+                this.renderizarCalendario();
+            } else if (vista === 'estadisticas') {
+                this.actualizarEstadisticas();
+            } else if (vista === 'lista') {
+                this.renderizarListaClases();
+            } else if (vista === 'pagos') {
+                this.renderizarVistaPagos();
+            }
+            
+            console.log(`Vista ${vista} cargada correctamente`);
+            
+        } catch (error) {
+            console.error(`Error al cambiar a vista ${vista}:`, error);
+        }
     }
 
     cambiarVistaCalendario(vista) {
@@ -643,15 +692,23 @@ class ClaseManager {
         const container = document.getElementById('calendario');
         const titulo = document.getElementById('titulo-calendario');
         
-        if (!container || !titulo) return;
-
-        if (this.vistaCalendario === 'mes') {
-            this.renderizarCalendarioMes();
-        } else if (this.vistaCalendario === 'semana') {
-            this.renderizarCalendarioSemana();
+        if (!container || !titulo) {
+            console.error('Elementos del calendario no encontrados');
+            return;
         }
-        
-        this.actualizarEstadisticasHeader();
+
+        try {
+            if (this.vistaCalendario === 'mes') {
+                this.renderizarCalendarioMes();
+            } else if (this.vistaCalendario === 'semana') {
+                this.renderizarCalendarioSemana();
+            }
+            
+            this.actualizarEstadisticasHeader();
+        } catch (error) {
+            console.error('Error al renderizar calendario:', error);
+            container.innerHTML = '<div class="empty-state"><h3>Error al cargar el calendario</h3><p>Intenta refrescar la página</p></div>';
+        }
     }
 
     renderizarCalendarioMes() {
@@ -1304,7 +1361,15 @@ class ClaseManager {
 
     actualizarElemento(id, valor, propiedad = 'textContent') {
         const elemento = document.getElementById(id);
-        if (elemento) elemento[propiedad] = valor;
+        if (elemento) {
+            try {
+                elemento[propiedad] = valor;
+            } catch (error) {
+                console.error(`Error actualizando elemento ${id}:`, error);
+            }
+        } else {
+            console.warn(`Elemento no encontrado: ${id}`);
+        }
     }
 
     obtenerValorElemento(id) {
@@ -1318,7 +1383,27 @@ let app;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Inicializando Mis Clases con Sistema de Pagos...');
-    app = new ClaseManager();
+    
+    // Verificar que todos los elementos necesarios estén presentes
+    const elementosRequeridos = [
+        'lista-clases', 'calendario', 'lista-pagos', 
+        'total-mes', 'clases-hoy', 'pagos-pendientes'
+    ];
+    
+    const faltantes = elementosRequeridos.filter(id => !document.getElementById(id));
+    if (faltantes.length > 0) {
+        console.error('Elementos faltantes en el DOM:', faltantes);
+        alert('Error: La aplicación no se cargó correctamente. Intenta refrescar la página.');
+        return;
+    }
+    
+    try {
+        app = new ClaseManager();
+        console.log('Aplicación inicializada correctamente');
+    } catch (error) {
+        console.error('Error al inicializar la aplicación:', error);
+        alert('Error al inicializar la aplicación: ' + error.message);
+    }
 });
 
 // ===== FUNCIONES GLOBALES =====

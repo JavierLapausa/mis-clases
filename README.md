@@ -180,6 +180,40 @@ La aplicación está optimizada para móviles:
 - **Formularios optimizados** para teclados móviles
 - **Iconos grandes** para fácil navegación
 
+## 🔧 Solución de Problemas
+
+### La aplicación no se carga en GitHub Pages
+
+Si la aplicación no funciona correctamente cuando la accedes desde GitHub Pages:
+
+1. **Abre la consola del navegador** (F12 → Console)
+2. **Busca errores** en rojo que indiquen problemas
+3. **Ejecuta el comando de verificación**:
+   ```javascript
+   verificarEstadoApp();
+   ```
+4. **Problemas comunes**:
+   - **Calendario vacío**: Refresca la página (Ctrl+F5)
+   - **Datos no se guardan**: Verifica que localStorage esté habilitado
+   - **Botones no responden**: Verifica errores de JavaScript en consola
+
+### Debugging Manual
+
+Si necesitas hacer debugging más profundo:
+
+1. **Incluye el script de debug** descomentando esta línea en `index.html`:
+   ```html
+   <script src="debug.js"></script>
+   ```
+2. **Abre consola del navegador** y verifica los mensajes automáticos
+3. **Ejecuta verificaciones manuales** con `verificarEstadoApp()`
+
+### GitHub Pages vs Local
+
+- **Local**: Abre `index.html` directamente en el navegador
+- **GitHub Pages**: Accede vía `https://tu-usuario.github.io/mis-clases/`
+- **Diferencias**: GitHub Pages puede tener restricciones de seguridad adicionales
+
 ## 🛠️ Tecnologías
 
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)

@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aplicación para gestión de clases particulares con control de pagos">
     <title>Mis Clases - Seguimiento de Estudiantes</title>
     
     <!-- CSS -->
     <link rel="stylesheet" href="styles.css">
     
     <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
+    
+    <!-- Preload JavaScript para mejor rendimiento -->
+    <link rel="preload" href="app.js" as="script">
 </head>
 <body>
     <div class="app-container">
@@ -360,6 +364,24 @@
     </div>
 
     <!-- JavaScript -->
+    <script>
+        // Verificación básica para debugging en GitHub Pages
+        window.addEventListener('error', function(e) {
+            console.error('Error global capturado:', e.error);
+        });
+        
+        // Log básico para verificar carga
+        console.log('HTML cargado correctamente');
+        console.log('URL actual:', window.location.href);
+        console.log('localStorage disponible:', typeof(Storage) !== "undefined");
+        
+        // Detectar si estamos en GitHub Pages
+        if (window.location.hostname.includes('github.io')) {
+            console.log('🌐 Ejecutando en GitHub Pages');
+        }
+    </script>
     <script src="app.js"></script>
+    <!-- Script de debugging (opcional) -->
+    <!-- <script src="debug.js"></script> -->
 </body>
 </html>
