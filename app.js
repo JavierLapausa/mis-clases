@@ -183,7 +183,7 @@ class ClaseManager {
     obtenerClasesFiltradas() {
         let clasesFiltradas = [...this.clases];
         
-        // Filtro por estado de pago
+        // Filtro por estado de pago (para vista lista)
         if (this.filtroEstadoPago) {
             clasesFiltradas = clasesFiltradas.filter(clase => {
                 return this.obtenerEstadoPago(clase) === this.filtroEstadoPago;
@@ -198,7 +198,19 @@ class ClaseManager {
             });
         }
 
-        // Filtro por tipo de pago (para vista de pagos)
+        return clasesFiltradas;
+    }
+
+    // Nueva función específica para filtrar en vista de pagos
+    obtenerClasesFiltradasPagos() {
+        let clasesFiltradas = [...this.clases];
+        
+        // Debug básico
+        if (this.filtroTipoPago !== 'todos') {
+            console.log('Aplicando filtro:', this.filtroTipoPago);
+        }
+        
+        // Filtro por tipo de pago (todos, pendiente, vencido, pagado)
         if (this.filtroTipoPago !== 'todos') {
             clasesFiltradas = clasesFiltradas.filter(clase => {
                 const estadoPago = this.obtenerEstadoPago(clase);
@@ -206,6 +218,15 @@ class ClaseManager {
             });
         }
         
+        // Filtro por mes 
+        if (this.filtroMesPago !== '') {
+            const mesSeleccionado = parseInt(this.filtroMesPago);
+            clasesFiltradas = clasesFiltradas.filter(clase => {
+                return clase.fecha.getMonth() === mesSeleccionado;
+            });
+        }
+
+        console.log(`Mostrando ${clasesFiltradas.length} clases de ${this.clases.length} totales`);
         return clasesFiltradas;
     }
 
@@ -354,12 +375,16 @@ class ClaseManager {
             });
         }
 
-        // Filtros de tabs en vista pagos
+        // Filtros de tabs en vista pagos - CORREGIDO
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
+                // Remover active de todos los tabs
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-                e.target.classList.add('active');
-                this.filtroTipoPago = e.target.dataset.filter;
+                // Añadir active al clickeado
+                e.currentTarget.classList.add('active');
+                
+                // Actualizar filtro
+                this.filtroTipoPago = e.currentTarget.dataset.filter;
                 this.renderizarVistaPagos();
             });
         });
@@ -502,7 +527,7 @@ class ClaseManager {
         // Actualizar estadísticas de pagos
         this.actualizarEstadisticasPagos();
 
-        const clases = this.obtenerClasesFiltradas();
+        const clases = this.obtenerClasesFiltradasPagos(); // Usar la función específica para pagos
         
         if (clases.length === 0) {
             container.innerHTML = `
@@ -677,7 +702,9 @@ class ClaseManager {
                     clasesDia = clasesDelDia.slice(0, 3).map(clase => {
                         const estadoPago = this.obtenerEstadoPago(clase);
                         const iconoPago = estadoPago === 'pagado' ? '✓' : estadoPago === 'vencido' ? '!' : '○';
-                        return `<div class="clase-calendario ${estadoPago}">${iconoPago} ${this.escaparHtml(clase.estudiante.split(' ')[0])}</div>`;
+                        const hora = this.formatearHora(clase.fecha);
+                        const nombreCorto = this.escaparHtml(clase.estudiante.split(' ')[0]);
+                        return `<div class="clase-calendario ${estadoPago}" title="${this.escaparHtml(clase.estudiante)} - ${hora} - €${clase.precio}">${iconoPago} ${hora} ${nombreCorto}</div>`;
                     }).join('');
                     
                     if (clasesDelDia.length > 3) {
@@ -694,8 +721,17 @@ class ClaseManager {
                 clasesCSS += ' dia-otro-mes';
             }
 
+            // Generar fecha string sin problemas de zona horaria
+            let fechaStr = '';
+            if (esDiaDelMes) {
+                const año = fecha.getFullYear();
+                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                const dia = String(fecha.getDate()).padStart(2, '0');
+                fechaStr = `${año}-${mes}-${dia}`;
+            }
+
             html += `
-                <div class="${clasesCSS}" ${esDiaDelMes ? `onclick="app.mostrarVistaDelDia('${fecha.toISOString().split('T')[0]}')"` : ''}>
+                <div class="${clasesCSS}" ${esDiaDelMes ? `onclick="app.mostrarVistaDelDia('${fechaStr}')"` : ''}>
                     ${esDiaDelMes ? `<div class="dia-numero">${diaNumero}</div>` : ''}
                     <div class="clases-del-dia">${clasesDia}</div>
                 </div>
@@ -741,7 +777,7 @@ class ClaseManager {
                             `;
                         }).join('')}
                         ${clasesDelDia.length === 0 ? `
-                            <div class="sin-clases" onclick="app.abrirModalClase('${dia.toISOString().split('T')[0]}')">
+                            <div class="sin-clases" onclick="app.abrirModalClase('${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, '0')}-${String(dia.getDate()).padStart(2, '0')}')">
                                 <i class="fas fa-plus"></i> Agregar clase
                             </div>
                         ` : ''}
@@ -763,8 +799,16 @@ class ClaseManager {
         this.renderizarCalendario();
     }
 
-    mostrarVistaDelDia(fecha) {
-        this.fechaSeleccionada = new Date(fecha);
+    mostrarVistaDelDia(fechaStr) {
+        console.log('Mostrando día:', fechaStr);
+        
+        // Crear fecha directamente desde string YYYY-MM-DD
+        const partes = fechaStr.split('-');
+        const año = parseInt(partes[0]);
+        const mes = parseInt(partes[1]) - 1; // JavaScript usa 0-11 para meses
+        const dia = parseInt(partes[2]);
+        
+        this.fechaSeleccionada = new Date(año, mes, dia);
         this.vistaCalendario = 'dia';
         this.renderizarVistaDia();
     }
@@ -793,7 +837,7 @@ class ClaseManager {
                 <div class="dia-sin-clases">
                     <i class="fas fa-calendar-plus"></i>
                     <h3>No hay clases programadas</h3>
-                    <button class="btn-primary" onclick="app.abrirModalClase('${this.fechaSeleccionada.toISOString().split('T')[0]}')">
+                    <button class="btn-primary" onclick="app.abrirModalClase('${this.fechaSeleccionada.getFullYear()}-${String(this.fechaSeleccionada.getMonth() + 1).padStart(2, '0')}-${String(this.fechaSeleccionada.getDate()).padStart(2, '0')}')">
                         <i class="fas fa-plus"></i> Agregar clase
                     </button>
                 </div>
@@ -926,6 +970,7 @@ class ClaseManager {
     }
 
     actualizarEstadisticasHeader() {
+        const hoy = new Date();
         let ingresos = 0;
         let numClases = 0;
         let pagosPendientes = 0;
@@ -940,7 +985,10 @@ class ClaseManager {
                 clase.fecha >= inicioMes && clase.fecha <= finMes
             );
             
-            ingresos = clasesMes.reduce((total, clase) => total + clase.precio, 0);
+            ingresos = clasesMes.reduce((total, clase) => {
+                // Solo contar ingresos si está pagado
+                return total + (clase.estadoPago === 'pagado' ? clase.precio : 0);
+            }, 0);
             numClases = clasesMes.length;
             
         } else if (this.vistaCalendario === 'semana') {
@@ -953,17 +1001,37 @@ class ClaseManager {
                 clase.fecha >= inicioSemana && clase.fecha <= finSemana
             );
             
-            ingresos = clasesSemana.reduce((total, clase) => total + clase.precio, 0);
+            ingresos = clasesSemana.reduce((total, clase) => {
+                // Solo contar ingresos si está pagado
+                return total + (clase.estadoPago === 'pagado' ? clase.precio : 0);
+            }, 0);
             numClases = clasesSemana.length;
             
-        } else if (this.vistaCalendario === 'dia') {
+        } else if (this.vistaCalendario === 'dia' && this.fechaSeleccionada) {
             const clasesDia = this.obtenerClasesPorFecha(this.fechaSeleccionada);
             
-            ingresos = clasesDia.reduce((total, clase) => total + clase.precio, 0);
+            ingresos = clasesDia.reduce((total, clase) => {
+                // Solo contar ingresos si está pagado
+                return total + (clase.estadoPago === 'pagado' ? clase.precio : 0);
+            }, 0);
             numClases = clasesDia.length;
+        } else {
+            // Vista por defecto: mes actual
+            const inicioMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const finMesActual = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59, 999);
+            
+            const clasesMesActual = this.clases.filter(clase => 
+                clase.fecha >= inicioMesActual && clase.fecha <= finMesActual
+            );
+            
+            ingresos = clasesMesActual.reduce((total, clase) => {
+                // Solo contar ingresos si está pagado
+                return total + (clase.estadoPago === 'pagado' ? clase.precio : 0);
+            }, 0);
+            numClases = clasesMesActual.length;
         }
 
-        // Contar pagos pendientes globalmente
+        // Contar pagos pendientes y vencidos globalmente
         this.clases.forEach(clase => {
             const estado = this.obtenerEstadoPago(clase);
             if (estado === 'pendiente' || estado === 'vencido') {
@@ -990,7 +1058,19 @@ class ClaseManager {
         
         if (fecha) {
             const fechaInput = document.getElementById('fecha');
-            if (fechaInput) fechaInput.value = typeof fecha === 'string' ? fecha : fecha.toISOString().split('T')[0];
+            if (fechaInput) {
+                let fechaFormato;
+                if (typeof fecha === 'string') {
+                    fechaFormato = fecha;
+                } else {
+                    // Si es un objeto Date, formatear correctamente
+                    const año = fecha.getFullYear();
+                    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const dia = String(fecha.getDate()).padStart(2, '0');
+                    fechaFormato = `${año}-${mes}-${dia}`;
+                }
+                fechaInput.value = fechaFormato;
+            }
         }
         
         modal.classList.add('show');

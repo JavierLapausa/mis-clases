@@ -802,7 +802,7 @@ body {
     color: white;
     padding: 2px 4px;
     border-radius: 2px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -810,6 +810,8 @@ body {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    line-height: 1.2;
+    margin-bottom: 1px;
 }
 
 .clase-calendario.pagado {
