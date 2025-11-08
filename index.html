@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Aplicación para gestión de clases particulares con control de pagos">
+    <meta name="description" content="Aplicación para gestión de clases particulares con control de pagos y sincronización en la nube">
     <title>Mis Clases - Seguimiento de Estudiantes</title>
     
     <!-- CSS -->
@@ -14,6 +14,7 @@
     
     <!-- Preload JavaScript para mejor rendimiento -->
     <link rel="preload" href="app.js" as="script">
+    <link rel="preload" href="github-sync.js" as="script">
 </head>
 <body>
     <div class="app-container">
@@ -56,6 +57,10 @@
             <button class="nav-btn" data-view="estadisticas">
                 <i class="fas fa-chart-bar"></i>
                 <span>Stats</span>
+            </button>
+            <button class="nav-btn" data-view="config">
+                <i class="fas fa-cog"></i>
+                <span>Config</span>
             </button>
         </nav>
 
@@ -180,7 +185,6 @@
             <section id="vista-estadisticas" class="view-section">
                 <h2>Estadísticas</h2>
                 
-                <!-- 🔧 CORREGIDO: IDs actualizados para coincidir con el JS -->
                 <div id="estadisticas-container" class="stats-container">
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -205,7 +209,6 @@
                         </div>
                     </div>
 
-                    <!-- 🔧 NUEVO: Resumen de estados de pago -->
                     <div class="pagos-resumen">
                         <h3>Resumen de Pagos</h3>
                         <div class="resumen-grid">
@@ -266,6 +269,153 @@
                             <div id="lista-top-estudiantes">
                                 <!-- Se generará dinámicamente -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vista Configuración -->
+            <section id="vista-config" class="view-section">
+                <h2><i class="fas fa-cog"></i> Configuración</h2>
+
+                <!-- Sincronización GitHub -->
+                <div class="config-section">
+                    <div class="config-header">
+                        <h3><i class="fab fa-github"></i> Sincronización con GitHub</h3>
+                        <button class="btn-info btn-sm" onclick="verInfoSync()">
+                            <i class="fas fa-info-circle"></i> Ver Estado
+                        </button>
+                    </div>
+                    
+                    <div class="config-card">
+                        <div class="config-description">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <div>
+                                <h4>Guardar en la nube</h4>
+                                <p>Guarda una copia de seguridad de tus clases en GitHub Gist. Podrás acceder a tus datos desde cualquier dispositivo.</p>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="sincronizarConGitHub()">
+                            <i class="fas fa-cloud-upload-alt"></i> Guardar en GitHub
+                        </button>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-description">
+                            <i class="fas fa-cloud-download-alt"></i>
+                            <div>
+                                <h4>Cargar desde la nube</h4>
+                                <p>Restaura tus datos desde GitHub. <strong>Atención:</strong> Esto reemplazará tus datos locales actuales.</p>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="cargarDesdeGitHub()">
+                            <i class="fas fa-cloud-download-alt"></i> Cargar desde GitHub
+                        </button>
+                    </div>
+
+                    <div class="config-info">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Consejo:</strong> Guarda regularmente en GitHub para mantener tus datos seguros. Si usas múltiples dispositivos, carga los datos al inicio y guarda al finalizar.
+                        </div>
+                    </div>
+
+                    <div class="config-info warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Configuración requerida:</strong> Para usar esta función, debes configurar tu token de GitHub y el ID del Gist en el archivo <code>github-sync.js</code>. Consulta la documentación para más detalles.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copias de Seguridad Locales -->
+                <div class="config-section">
+                    <h3><i class="fas fa-download"></i> Copias de Seguridad Locales</h3>
+                    
+                    <div class="config-card">
+                        <div class="config-description">
+                            <i class="fas fa-file-export"></i>
+                            <div>
+                                <h4>Exportar datos</h4>
+                                <p>Descarga un archivo JSON con todas tus clases para hacer una copia de seguridad local.</p>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="exportarDatos()">
+                            <i class="fas fa-file-export"></i> Exportar JSON
+                        </button>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-description">
+                            <i class="fas fa-file-import"></i>
+                            <div>
+                                <h4>Importar datos</h4>
+                                <p>Restaura tus clases desde un archivo JSON previamente exportado.</p>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
+                            <i class="fas fa-file-import"></i> Importar JSON
+                        </button>
+                        <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importarDatos(event)">
+                    </div>
+                </div>
+
+                <!-- Datos y Almacenamiento -->
+                <div class="config-section">
+                    <h3><i class="fas fa-database"></i> Datos y Almacenamiento</h3>
+                    
+                    <div class="config-stats-grid">
+                        <div class="config-stat">
+                            <i class="fas fa-list"></i>
+                            <div class="config-stat-value" id="total-clases-config">0</div>
+                            <div class="config-stat-label">Clases totales</div>
+                        </div>
+                        <div class="config-stat">
+                            <i class="fas fa-database"></i>
+                            <div class="config-stat-value" id="tamaño-datos">0 KB</div>
+                            <div class="config-stat-label">Espacio usado</div>
+                        </div>
+                        <div class="config-stat">
+                            <i class="fas fa-clock"></i>
+                            <div class="config-stat-value" id="ultima-actualizacion">-</div>
+                            <div class="config-stat-label">Última actualización</div>
+                        </div>
+                    </div>
+
+                    <div class="config-card danger">
+                        <div class="config-description">
+                            <i class="fas fa-trash-alt"></i>
+                            <div>
+                                <h4>Borrar todos los datos</h4>
+                                <p><strong>⚠️ Acción irreversible:</strong> Esto eliminará permanentemente todas tus clases. Asegúrate de hacer una copia de seguridad antes.</p>
+                            </div>
+                        </div>
+                        <button class="btn-danger" onclick="borrarTodosDatos()">
+                            <i class="fas fa-trash-alt"></i> Borrar Todo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Información de la Aplicación -->
+                <div class="config-section">
+                    <h3><i class="fas fa-info-circle"></i> Acerca de</h3>
+                    <div class="config-about">
+                        <div class="about-item">
+                            <strong>Versión:</strong> 2.0.0
+                        </div>
+                        <div class="about-item">
+                            <strong>Última actualización:</strong> Noviembre 2025
+                        </div>
+                        <div class="about-item">
+                            <strong>Características:</strong>
+                            <ul>
+                                <li>Gestión completa de clases y estudiantes</li>
+                                <li>Control de pagos con estados (pagado, pendiente, vencido)</li>
+                                <li>Calendario mensual y semanal</li>
+                                <li>Estadísticas detalladas</li>
+                                <li>Sincronización en la nube con GitHub</li>
+                                <li>Responsive design para móviles</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -411,28 +561,8 @@
         if (window.location.hostname.includes('github.io')) {
             console.log('🌐 Ejecutando en GitHub Pages');
         }
-
-        // Verificar que todos los IDs críticos existen
-        const idsRequeridos = [
-            'total-mes-stats', 'total-estudiantes', 'total-clases-stats',
-            'clases-pagadas', 'clases-pendientes', 'clases-vencidas',
-            'bar-pagados', 'bar-pendientes', 'bar-vencidos',
-            'porcentaje-pagados', 'porcentaje-pendientes', 'porcentaje-vencidos',
-            'lista-top-estudiantes'
-        ];
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🔍 Verificando IDs de estadísticas...');
-            const faltantes = idsRequeridos.filter(id => !document.getElementById(id));
-            if (faltantes.length > 0) {
-                console.error('❌ IDs faltantes:', faltantes);
-            } else {
-                console.log('✅ Todos los IDs de estadísticas presentes');
-            }
-        });
     </script>
     <script src="app.js"></script>
-    <!-- Script de debugging (opcional) -->
-    <!-- <script src="debug.js"></script> -->
+    <script src="github-sync.js"></script>
 </body>
 </html>
