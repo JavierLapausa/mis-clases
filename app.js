@@ -18,7 +18,7 @@ class ClaseManager {
         this.claseAEliminar = null;
         this.clasePago = null;
         this.vistaCalendario = 'mes';
-        this.vistaAnterior = 'mes'; // Para recordar desde qué vista se accede a la vista diaria
+        this.vistaAnterior = 'mes';
         this.filtroEstadoPago = '';
         this.filtroMesPago = '';
         this.filtroTipoPago = 'todos';
@@ -33,7 +33,6 @@ class ClaseManager {
     // ===== GESTIÓN DE DATOS =====
     cargarClases() {
         try {
-            // Verificar que localStorage esté disponible
             if (typeof(Storage) === "undefined") {
                 console.warn('localStorage no está disponible');
                 return [];
@@ -69,7 +68,6 @@ class ClaseManager {
             localStorage.setItem('misClases', JSON.stringify(this.clases));
             console.log(`✅ Guardadas ${this.clases.length} clases`);
             
-            // 🔧 FIX 3: Disparar evento de sincronización para otras pestañas
             window.dispatchEvent(new Event('storage'));
         } catch (error) {
             console.error('Error guardando clases:', error);
@@ -191,7 +189,6 @@ class ClaseManager {
         const fechaClase = new Date(clase.fecha);
         fechaClase.setHours(0, 0, 0, 0);
         
-        // Si la clase fue hace más de 7 días y no está pagada, está vencida
         const diasDiferencia = Math.floor((hoy - fechaClase) / (1000 * 60 * 60 * 24));
         
         if (diasDiferencia > 7) {
@@ -238,7 +235,6 @@ class ClaseManager {
         });
     }
 
-    // Verificar si un horario está disponible
     verificarDisponibilidadHorario(fecha, hora, claseIdExcluir = null) {
         try {
             const fechaHora = new Date(fecha + 'T' + hora);
@@ -248,7 +244,6 @@ class ClaseManager {
                 const fechaClase = new Date(clase.fecha);
                 const diferenciaMinutos = Math.abs((fechaHora - fechaClase) / 60000);
                 
-                // Considerar conflicto si hay otra clase en los 30 minutos previos o posteriores
                 return diferenciaMinutos < 30;
             });
             
@@ -262,7 +257,6 @@ class ClaseManager {
         }
     }
 
-    // Obtener horarios sugeridos para un día
     obtenerHorariosSugeridos(fecha) {
         const clasesDelDia = this.obtenerClasesPorFecha(fecha);
         const horariosOcupados = clasesDelDia.map(c => {
@@ -287,20 +281,18 @@ class ClaseManager {
                 }
             });
         }
-        return sugeridos.slice(0, 8); // Primeros 8 horarios disponibles
+        return sugeridos.slice(0, 8);
     }
 
     obtenerClasesFiltradas() {
         let clasesFiltradas = [...this.clases];
         
-        // Filtro por estado de pago (para vista lista)
         if (this.filtroEstadoPago) {
             clasesFiltradas = clasesFiltradas.filter(clase => {
                 return this.obtenerEstadoPago(clase) === this.filtroEstadoPago;
             });
         }
         
-        // Filtro por mes (para vista de pagos)
         if (this.filtroMesPago !== '') {
             const mesSeleccionado = parseInt(this.filtroMesPago);
             clasesFiltradas = clasesFiltradas.filter(clase => {
@@ -311,11 +303,9 @@ class ClaseManager {
         return clasesFiltradas;
     }
 
-    // Nueva función específica para filtrar en vista de pagos
     obtenerClasesFiltradasPagos() {
         let clasesFiltradas = [...this.clases];
         
-        // Filtro por tipo de pago (todos, pendiente, vencido, pagado)
         if (this.filtroTipoPago !== 'todos') {
             clasesFiltradas = clasesFiltradas.filter(clase => {
                 const estadoPago = this.obtenerEstadoPago(clase);
@@ -323,7 +313,6 @@ class ClaseManager {
             });
         }
         
-        // Filtro por mes 
         if (this.filtroMesPago !== '') {
             const mesSeleccionado = parseInt(this.filtroMesPago);
             clasesFiltradas = clasesFiltradas.filter(clase => {
@@ -334,7 +323,6 @@ class ClaseManager {
         return clasesFiltradas;
     }
 
-    // Utilidades de fecha
     obtenerInicioSemana(fecha) {
         const d = new Date(fecha);
         const day = d.getDay();
@@ -344,7 +332,6 @@ class ClaseManager {
         return d;
     }
 
-    // 🔧 FIX 4: Init mejorado con prevención de reinicialización
     init() {
         if (this.eventListenersConfigurados) {
             console.warn('Event listeners ya configurados, saltando...');
@@ -359,7 +346,7 @@ class ClaseManager {
             this.configurarFechaDefault();
             this.configurarBusqueda();
             this.configurarFiltros();
-            this.configurarSincronizacion(); // 🔧 FIX 5: Sincronización entre pestañas
+            this.configurarSincronizacion();
             
             this.eventListenersConfigurados = true;
             
@@ -374,9 +361,7 @@ class ClaseManager {
         }
     }
 
-    // 🔧 FIX 5: Sincronización entre pestañas/dispositivos
     configurarSincronizacion() {
-        // Escuchar cambios en localStorage de otras pestañas
         window.addEventListener('storage', (e) => {
             if (e.key === 'misClases') {
                 console.log('🔄 Datos actualizados en otra pestaña, recargando...');
@@ -386,7 +371,6 @@ class ClaseManager {
             }
         });
 
-        // Verificar actualizaciones periódicamente (para móvil)
         setInterval(() => {
             const datosActuales = localStorage.getItem('misClases');
             const datosMemoria = JSON.stringify(this.clases);
@@ -396,26 +380,21 @@ class ClaseManager {
                 this.clases = this.cargarClases();
                 this.actualizarVistas();
             }
-        }, 5000); // Cada 5 segundos
+        }, 5000);
     }
 
     configurarEventListeners() {
-        // 🔧 FIX 6: Remover listeners anteriores antes de añadir nuevos
         this.removerEventListeners();
 
-        // Navegación principal
         const navBtns = document.querySelectorAll('.nav-btn');
         navBtns.forEach(btn => {
-            // Usar once para que solo se ejecute una vez por click
             const handler = (e) => {
                 this.cambiarVista(e.currentTarget.dataset.view);
             };
             btn.addEventListener('click', handler);
-            // Guardar referencia para poder removerlo después
             btn._clickHandler = handler;
         });
 
-        // Modal nueva clase
         const btnNuevaClase = document.getElementById('btn-nueva-clase');
         if (btnNuevaClase) {
             const handler = () => this.abrirModalClase();
@@ -423,10 +402,8 @@ class ClaseManager {
             btnNuevaClase._clickHandler = handler;
         }
 
-        // Modales
         this.configurarModales();
 
-        // Navegación calendario
         const btnAnterior = document.getElementById('btn-calendario-anterior');
         const btnSiguiente = document.getElementById('btn-calendario-siguiente');
         
@@ -441,7 +418,6 @@ class ClaseManager {
             btnSiguiente._clickHandler = handler;
         }
 
-        // Toggle vista mes/semana
         const toggleMes = document.getElementById('toggle-mes');
         const toggleSemana = document.getElementById('toggle-semana');
         
@@ -456,7 +432,6 @@ class ClaseManager {
             toggleSemana._clickHandler = handler;
         }
 
-        // Estado de pago en formulario
         const estadoPago = document.getElementById('estado-pago');
         if (estadoPago) {
             const handler = () => this.toggleFechaPago();
@@ -465,25 +440,20 @@ class ClaseManager {
         }
     }
 
-    // 🔧 FIX 7: Método para remover event listeners y prevenir duplicación
     removerEventListeners() {
-        // Remover navegación
         document.querySelectorAll('.nav-btn').forEach(btn => {
             if (btn._clickHandler) {
                 btn.removeEventListener('click', btn._clickHandler);
             }
         });
 
-        // Remover botón nueva clase
         const btnNuevaClase = document.getElementById('btn-nueva-clase');
         if (btnNuevaClase && btnNuevaClase._clickHandler) {
             btnNuevaClase.removeEventListener('click', btnNuevaClase._clickHandler);
         }
     }
 
-    // 🔧 FIX 8: Configuración de modales mejorada
     configurarModales() {
-        // Cerrar modales
         const btnCerrar = document.getElementById('btn-cerrar-modal');
         const btnCancelar = document.getElementById('btn-cancelar');
         const btnCerrarPago = document.getElementById('btn-cerrar-modal-pago');
@@ -494,25 +464,21 @@ class ClaseManager {
         if (btnCerrarPago) btnCerrarPago.addEventListener('click', () => this.cerrarModalPago());
         if (btnCancelarPago) btnCancelarPago.addEventListener('click', () => this.cerrarModalPago());
 
-        // 🔧 FIX 9: Formulario con prevención de submit múltiple
         const form = document.getElementById('form-clase');
         if (form) {
-            // Remover listener anterior si existe
             if (form._submitHandler) {
                 form.removeEventListener('submit', form._submitHandler);
             }
             
-            // Crear nuevo handler
             const handler = (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // Prevenir propagación
+                e.stopPropagation();
                 
-                // 🔧 FIX 10: Deshabilitar botón durante guardado
                 const btnGuardar = document.getElementById('btn-guardar');
                 if (btnGuardar) {
                     if (btnGuardar.disabled) {
                         console.log('⚠️ Guardado ya en progreso, ignorando...');
-                        return; // Ya se está guardando
+                        return;
                     }
                     btnGuardar.disabled = true;
                     btnGuardar.textContent = 'Guardando...';
@@ -521,7 +487,6 @@ class ClaseManager {
                 try {
                     this.guardarClaseFormulario();
                 } finally {
-                    // Rehabilitar botón después de 1 segundo
                     setTimeout(() => {
                         if (btnGuardar) {
                             btnGuardar.disabled = false;
@@ -540,14 +505,12 @@ class ClaseManager {
             btnConfirmarPago.addEventListener('click', () => this.confirmarPago());
         }
 
-        // Confirmación eliminar
         const btnCancelarEliminar = document.getElementById('btn-cancelar-eliminar');
         const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar');
         
         if (btnCancelarEliminar) btnCancelarEliminar.addEventListener('click', () => this.cerrarModalConfirmacion());
         if (btnConfirmarEliminar) btnConfirmarEliminar.addEventListener('click', () => this.confirmarEliminar());
 
-        // Cerrar al hacer click fuera
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
                 this.cerrarModal();
@@ -567,7 +530,6 @@ class ClaseManager {
     }
 
     configurarFiltros() {
-        // Filtro estado de pago
         const filtroPago = document.getElementById('filtro-pago');
         if (filtroPago) {
             filtroPago.addEventListener('change', (e) => {
@@ -576,7 +538,6 @@ class ClaseManager {
             });
         }
 
-        // Filtro mes para pagos
         const filtroMesPago = document.getElementById('filtro-mes-pago');
         if (filtroMesPago) {
             filtroMesPago.addEventListener('change', (e) => {
@@ -585,7 +546,6 @@ class ClaseManager {
             });
         }
 
-        // Filtros de tabs en vista pagos
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -597,17 +557,14 @@ class ClaseManager {
         });
     }
 
-   // ===== NAVEGACIÓN =====
     cambiarVista(vista) {
         console.log(`Cambiando a vista: ${vista}`);
         
         try {
-            // Actualizar navegación
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             const navBtn = document.querySelector(`[data-view="${vista}"]`);
             if (navBtn) navBtn.classList.add('active');
 
-            // Mostrar vista
             document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
             const targetView = document.getElementById(`vista-${vista}`);
             if (targetView) {
@@ -617,7 +574,6 @@ class ClaseManager {
                 return;
             }
 
-            // Actualizar contenido
             if (vista === 'calendario') {
                 this.renderizarCalendario();
             } else if (vista === 'estadisticas') {
@@ -632,7 +588,6 @@ class ClaseManager {
         }
     }
 
-    // ===== ACTUALIZACIÓN DE VISTAS =====
     actualizarVistas() {
         try {
             this.actualizarEstadisticasHeader();
@@ -675,7 +630,6 @@ class ClaseManager {
         this.actualizarElemento('pagos-pendientes', pagosPendientes);
     }
 
-    // ===== RENDERIZADO =====
     renderizarListaClases(clasesFiltradas = null) {
         const container = document.getElementById('lista-clases');
         if (!container) return;
@@ -745,7 +699,6 @@ class ClaseManager {
 
         const clases = this.obtenerClasesFiltradasPagos();
 
-        // Actualizar contadores
         const pagosPagados = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pagado').length;
         const pagosPendientes = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pendiente').length;
         const pagosVencidos = this.clases.filter(c => this.obtenerEstadoPago(c) === 'vencido').length;
@@ -821,7 +774,6 @@ class ClaseManager {
         }).join('');
     }
 
-    // ===== CALENDARIO =====
     cambiarVistaCalendario(vista) {
         this.vistaCalendario = vista;
         
@@ -865,18 +817,15 @@ class ClaseManager {
 
         let html = '';
 
-        // Cabecera días
         ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].forEach(dia => {
             html += `<div class="dia-cabecera">${dia}</div>`;
         });
 
-        // Días vacíos antes del primer día
         const diasVacios = primerDiaSemana === 0 ? 6 : primerDiaSemana - 1;
         for (let i = 0; i < diasVacios; i++) {
             html += '<div class="dia-calendario vacio"></div>';
         }
 
-        // Días del mes
         for (let dia = 1; dia <= diasMes; dia++) {
             const fecha = new Date(año, mes, dia);
             const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
@@ -899,7 +848,6 @@ class ClaseManager {
         container.innerHTML = html;
     }
 
-    // 🔧 FIX CALENDARIO SEMANAL: Permitir clic en cada día para ver detalle
     renderizarVistaSemana() {
         const container = document.getElementById('calendario');
         const titulo = document.getElementById('titulo-calendario');
@@ -922,7 +870,6 @@ class ClaseManager {
             const clasesDelDia = this.obtenerClasesPorFecha(dia);
             const esHoy = this.esFechaHoy(dia);
             
-            // Crear fecha en formato YYYY-MM-DD para el onclick
             const año = dia.getFullYear();
             const mes = String(dia.getMonth() + 1).padStart(2, '0');
             const diaNum = String(dia.getDate()).padStart(2, '0');
@@ -978,7 +925,6 @@ class ClaseManager {
     mostrarVistaDelDia(fechaStr) {
         console.log('Mostrando día:', fechaStr);
         
-        // Guardar la vista anterior (mes o semana)
         this.vistaAnterior = this.vistaCalendario;
         
         const partes = fechaStr.split('-');
@@ -1068,12 +1014,10 @@ class ClaseManager {
     }
 
     volverAlCalendario() {
-        // Volver a la vista anterior (mes o semana)
         this.vistaCalendario = this.vistaAnterior || 'mes';
         this.renderizarCalendario();
     }
 
-    // ===== ESTADÍSTICAS - 🔧 FIX COMPLETO =====
     actualizarEstadisticas() {
         console.log('📊 Actualizando estadísticas...');
         const container = document.getElementById('estadisticas-container');
@@ -1090,7 +1034,6 @@ class ClaseManager {
             console.log(`📅 Calculando para mes: ${hoy.getMonth() + 1}/${hoy.getFullYear()}`);
             console.log(`Total clases en sistema: ${this.clases.length}`);
 
-            // Clases del mes actual
             const clasesMes = this.clases.filter(clase => {
                 const fechaClase = new Date(clase.fecha);
                 return fechaClase >= primerDiaMes && fechaClase <= ultimoDiaMes;
@@ -1098,18 +1041,15 @@ class ClaseManager {
 
             console.log(`Clases del mes actual: ${clasesMes.length}`);
 
-            // Total mes (solo clases pagadas del mes actual)
             const totalMes = clasesMes
                 .filter(clase => clase.estadoPago === 'pagado')
                 .reduce((sum, clase) => sum + clase.precio, 0);
 
             console.log(`💰 Total mes: €${totalMes.toFixed(2)}`);
 
-            // Total estudiantes únicos
             const totalEstudiantes = new Set(this.clases.map(c => c.estudiante)).size;
             console.log(`👥 Estudiantes únicos: ${totalEstudiantes}`);
 
-            // Estadísticas de pago de TODAS las clases
             const clasesPagadas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pagado').length;
             const clasesPendientes = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pendiente').length;
             const clasesVencidas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'vencido').length;
@@ -1125,17 +1065,14 @@ class ClaseManager {
 
             console.log(`📊 Porcentajes - Pagado: ${porcentajePagado}%, Pendiente: ${porcentajePendiente}%, Vencido: ${porcentajeVencido}%`);
 
-            // Actualizar elementos principales
             this.actualizarElemento('total-mes-stats', `€${totalMes.toFixed(2)}`);
             this.actualizarElemento('total-estudiantes', totalEstudiantes.toString());
             this.actualizarElemento('total-clases-stats', this.clases.length.toString());
 
-            // Actualizar contadores de estado
             this.actualizarElemento('clases-pagadas', clasesPagadas.toString());
             this.actualizarElemento('clases-pendientes', clasesPendientes.toString());
             this.actualizarElemento('clases-vencidas', clasesVencidas.toString());
 
-            // Barras de progreso
             const barPagados = document.getElementById('bar-pagados');
             const barPendientes = document.getElementById('bar-pendientes');
             const barVencidos = document.getElementById('bar-vencidos');
@@ -1153,12 +1090,10 @@ class ClaseManager {
                 console.log(`🔴 Barra vencidos: ${porcentajeVencido}%`);
             }
 
-            // Porcentajes con símbolo
             this.actualizarElemento('porcentaje-pagados', `${porcentajePagado}%`);
             this.actualizarElemento('porcentaje-pendientes', `${porcentajePendiente}%`);
             this.actualizarElemento('porcentaje-vencidos', `${porcentajeVencido}%`);
 
-            // Top estudiantes
             this.actualizarTopEstudiantes();
 
             console.log('✅ Estadísticas actualizadas correctamente');
@@ -1213,7 +1148,6 @@ class ClaseManager {
         `).join('');
     }
 
-    // ===== MODALES =====
     abrirModalClase(fechaPreseleccionada = null) {
         const modal = document.getElementById('modal-clase');
         if (!modal) return;
@@ -1381,7 +1315,6 @@ class ClaseManager {
             return;
         }
 
-        // Verificar disponibilidad de horario
         const disponibilidad = this.verificarDisponibilidadHorario(fecha, hora, this.claseEditando);
         if (!disponibilidad.disponible) {
             const conflicto = disponibilidad.conflictos[0];
@@ -1420,7 +1353,6 @@ class ClaseManager {
         this.cerrarModal();
     }
 
-    // ===== UTILIDADES =====
     filtrarClases(termino) {
         const clasesFiltradas = this.clases.filter(clase => 
             clase.estudiante.toLowerCase().includes(termino.toLowerCase())
@@ -1489,7 +1421,6 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Inicializando Mis Clases (Versión con Fixes de Calendario y Estadísticas)...');
     
-    // Verificar elementos críticos
     const elementosRequeridos = [
         'lista-clases', 'calendario', 'lista-pagos', 
         'total-mes', 'clases-hoy', 'pagos-pendientes',
