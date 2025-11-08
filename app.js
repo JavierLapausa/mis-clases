@@ -18,6 +18,7 @@ class ClaseManager {
         this.claseAEliminar = null;
         this.clasePago = null;
         this.vistaCalendario = 'mes';
+        this.vistaAnterior = 'mes'; // Para recordar desde qué vista se accede a la vista diaria
         this.filtroEstadoPago = '';
         this.filtroMesPago = '';
         this.filtroTipoPago = 'todos';
@@ -837,8 +838,10 @@ class ClaseManager {
     renderizarCalendario() {
         if (this.vistaCalendario === 'mes') {
             this.renderizarVistaCompleta();
-        } else {
+        } else if (this.vistaCalendario === 'semana') {
             this.renderizarVistaSemana();
+        } else if (this.vistaCalendario === 'dia') {
+            this.renderizarVistaDia();
         }
     }
 
@@ -896,6 +899,7 @@ class ClaseManager {
         container.innerHTML = html;
     }
 
+    // 🔧 FIX CALENDARIO SEMANAL: Permitir clic en cada día para ver detalle
     renderizarVistaSemana() {
         const container = document.getElementById('calendario');
         const titulo = document.getElementById('titulo-calendario');
@@ -917,16 +921,22 @@ class ClaseManager {
             dia.setDate(dia.getDate() + i);
             const clasesDelDia = this.obtenerClasesPorFecha(dia);
             const esHoy = this.esFechaHoy(dia);
+            
+            // Crear fecha en formato YYYY-MM-DD para el onclick
+            const año = dia.getFullYear();
+            const mes = String(dia.getMonth() + 1).padStart(2, '0');
+            const diaNum = String(dia.getDate()).padStart(2, '0');
+            const fechaStr = `${año}-${mes}-${diaNum}`;
 
             html += `
-                <div class="dia-semana ${esHoy ? 'hoy' : ''}">
-                    <div class="dia-semana-header">
+                <div class="dia-semana ${esHoy ? 'hoy' : ''}" style="cursor: pointer;">
+                    <div class="dia-semana-header" onclick="app.mostrarVistaDelDia('${fechaStr}')">
                         <div class="dia-semana-nombre">${dia.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
                         <div class="dia-semana-numero">${dia.getDate()}</div>
                     </div>
-                    <div class="clases-semana">
+                    <div class="clases-semana" onclick="app.mostrarVistaDelDia('${fechaStr}')">
                         ${clasesDelDia.length === 0 ? 
-                            '<div class="sin-clases">Sin clases</div>' :
+                            '<div class="sin-clases">Sin clases<br><small style="opacity: 0.7; font-size: 0.85em;">Click para agregar</small></div>' :
                             clasesDelDia.map(clase => {
                                 const estadoPago = this.obtenerEstadoPago(clase);
                                 return `
@@ -958,6 +968,8 @@ class ClaseManager {
             this.fechaCalendario.setMonth(this.fechaCalendario.getMonth() + direccion);
         } else if (this.vistaCalendario === 'semana') {
             this.fechaCalendario.setDate(this.fechaCalendario.getDate() + (direccion * 7));
+        } else if (this.vistaCalendario === 'dia') {
+            this.fechaSeleccionada.setDate(this.fechaSeleccionada.getDate() + direccion);
         }
         
         this.renderizarCalendario();
@@ -965,6 +977,9 @@ class ClaseManager {
 
     mostrarVistaDelDia(fechaStr) {
         console.log('Mostrando día:', fechaStr);
+        
+        // Guardar la vista anterior (mes o semana)
+        this.vistaAnterior = this.vistaCalendario;
         
         const partes = fechaStr.split('-');
         const año = parseInt(partes[0]);
@@ -1053,64 +1068,112 @@ class ClaseManager {
     }
 
     volverAlCalendario() {
-        this.vistaCalendario = 'mes';
+        // Volver a la vista anterior (mes o semana)
+        this.vistaCalendario = this.vistaAnterior || 'mes';
         this.renderizarCalendario();
     }
 
-    // ===== ESTADÍSTICAS =====
+    // ===== ESTADÍSTICAS - 🔧 FIX COMPLETO =====
     actualizarEstadisticas() {
+        console.log('📊 Actualizando estadísticas...');
         const container = document.getElementById('estadisticas-container');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Container de estadísticas no encontrado');
+            return;
+        }
 
-        const hoy = new Date();
-        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+        try {
+            const hoy = new Date();
+            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
 
-        const clasesMes = this.clases.filter(clase => {
-            return clase.fecha >= primerDiaMes && clase.fecha <= ultimoDiaMes;
-        });
+            console.log(`📅 Calculando para mes: ${hoy.getMonth() + 1}/${hoy.getFullYear()}`);
+            console.log(`Total clases en sistema: ${this.clases.length}`);
 
-        const totalMes = clasesMes
-            .filter(clase => clase.estadoPago === 'pagado')
-            .reduce((sum, clase) => sum + clase.precio, 0);
+            // Clases del mes actual
+            const clasesMes = this.clases.filter(clase => {
+                const fechaClase = new Date(clase.fecha);
+                return fechaClase >= primerDiaMes && fechaClase <= ultimoDiaMes;
+            });
 
-        const totalEstudiantes = new Set(this.clases.map(c => c.estudiante)).size;
+            console.log(`Clases del mes actual: ${clasesMes.length}`);
 
-        // Estadísticas de pago
-        const clasesPagadas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pagado').length;
-        const clasesPendientes = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pendiente').length;
-        const clasesVencidas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'vencido').length;
-        
-        const total = this.clases.length || 1;
-        const porcentajePagado = ((clasesPagadas / total) * 100).toFixed(0);
-        const porcentajePendiente = ((clasesPendientes / total) * 100).toFixed(0);
-        const porcentajeVencido = ((clasesVencidas / total) * 100).toFixed(0);
+            // Total mes (solo clases pagadas del mes actual)
+            const totalMes = clasesMes
+                .filter(clase => clase.estadoPago === 'pagado')
+                .reduce((sum, clase) => sum + clase.precio, 0);
 
-        // Actualizar elementos
-        this.actualizarElemento('total-mes-stats', totalMes.toFixed(2));
-        this.actualizarElemento('total-estudiantes', totalEstudiantes);
-        this.actualizarElemento('total-clases-stats', this.clases.length);
+            console.log(`💰 Total mes: €${totalMes.toFixed(2)}`);
 
-        // Barras de progreso
-        const barPagados = document.getElementById('bar-pagados');
-        const barPendientes = document.getElementById('bar-pendientes');
-        const barVencidos = document.getElementById('bar-vencidos');
+            // Total estudiantes únicos
+            const totalEstudiantes = new Set(this.clases.map(c => c.estudiante)).size;
+            console.log(`👥 Estudiantes únicos: ${totalEstudiantes}`);
 
-        if (barPagados) barPagados.style.width = `${porcentajePagado}%`;
-        if (barPendientes) barPendientes.style.width = `${porcentajePendiente}%`;
-        if (barVencidos) barVencidos.style.width = `${porcentajeVencido}%`;
+            // Estadísticas de pago de TODAS las clases
+            const clasesPagadas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pagado').length;
+            const clasesPendientes = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pendiente').length;
+            const clasesVencidas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'vencido').length;
+            
+            console.log(`✅ Pagadas: ${clasesPagadas}`);
+            console.log(`⏳ Pendientes: ${clasesPendientes}`);
+            console.log(`⚠️ Vencidas: ${clasesVencidas}`);
 
-        this.actualizarElemento('porcentaje-pagados', `${porcentajePagado}%`);
-        this.actualizarElemento('porcentaje-pendientes', `${porcentajePendiente}%`);
-        this.actualizarElemento('porcentaje-vencidos', `${porcentajeVencido}%`);
+            const total = this.clases.length || 1;
+            const porcentajePagado = Math.round((clasesPagadas / total) * 100);
+            const porcentajePendiente = Math.round((clasesPendientes / total) * 100);
+            const porcentajeVencido = Math.round((clasesVencidas / total) * 100);
 
-        // Top estudiantes
-        this.actualizarTopEstudiantes();
+            console.log(`📊 Porcentajes - Pagado: ${porcentajePagado}%, Pendiente: ${porcentajePendiente}%, Vencido: ${porcentajeVencido}%`);
+
+            // Actualizar elementos principales
+            this.actualizarElemento('total-mes-stats', `€${totalMes.toFixed(2)}`);
+            this.actualizarElemento('total-estudiantes', totalEstudiantes.toString());
+            this.actualizarElemento('total-clases-stats', this.clases.length.toString());
+
+            // Actualizar contadores de estado
+            this.actualizarElemento('clases-pagadas', clasesPagadas.toString());
+            this.actualizarElemento('clases-pendientes', clasesPendientes.toString());
+            this.actualizarElemento('clases-vencidas', clasesVencidas.toString());
+
+            // Barras de progreso
+            const barPagados = document.getElementById('bar-pagados');
+            const barPendientes = document.getElementById('bar-pendientes');
+            const barVencidos = document.getElementById('bar-vencidos');
+
+            if (barPagados) {
+                barPagados.style.width = `${porcentajePagado}%`;
+                console.log(`🟢 Barra pagados: ${porcentajePagado}%`);
+            }
+            if (barPendientes) {
+                barPendientes.style.width = `${porcentajePendiente}%`;
+                console.log(`🟡 Barra pendientes: ${porcentajePendiente}%`);
+            }
+            if (barVencidos) {
+                barVencidos.style.width = `${porcentajeVencido}%`;
+                console.log(`🔴 Barra vencidos: ${porcentajeVencido}%`);
+            }
+
+            // Porcentajes con símbolo
+            this.actualizarElemento('porcentaje-pagados', `${porcentajePagado}%`);
+            this.actualizarElemento('porcentaje-pendientes', `${porcentajePendiente}%`);
+            this.actualizarElemento('porcentaje-vencidos', `${porcentajeVencido}%`);
+
+            // Top estudiantes
+            this.actualizarTopEstudiantes();
+
+            console.log('✅ Estadísticas actualizadas correctamente');
+        } catch (error) {
+            console.error('❌ Error actualizando estadísticas:', error);
+            this.mostrarToast('Error al actualizar estadísticas', 'error');
+        }
     }
 
     actualizarTopEstudiantes() {
         const container = document.getElementById('lista-top-estudiantes');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Container de top estudiantes no encontrado');
+            return;
+        }
 
         const estudianteStats = {};
 
@@ -1130,6 +1193,8 @@ class ClaseManager {
         const topEstudiantes = Object.entries(estudianteStats)
             .sort((a, b) => b[1].total - a[1].total)
             .slice(0, 5);
+
+        console.log('🏆 Top 5 estudiantes:', topEstudiantes);
 
         if (topEstudiantes.length === 0) {
             container.innerHTML = '<p style="text-align: center; color: #64748b;">No hay datos</p>';
@@ -1407,6 +1472,8 @@ class ClaseManager {
             } catch (error) {
                 console.error(`Error actualizando elemento ${id}:`, error);
             }
+        } else {
+            console.warn(`⚠️ Elemento no encontrado: ${id}`);
         }
     }
 
@@ -1420,12 +1487,13 @@ class ClaseManager {
 let app;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializando Mis Clases (Versión Corregida)...');
+    console.log('🚀 Inicializando Mis Clases (Versión con Fixes de Calendario y Estadísticas)...');
     
     // Verificar elementos críticos
     const elementosRequeridos = [
         'lista-clases', 'calendario', 'lista-pagos', 
-        'total-mes', 'clases-hoy', 'pagos-pendientes'
+        'total-mes', 'clases-hoy', 'pagos-pendientes',
+        'total-mes-stats', 'total-estudiantes', 'total-clases-stats'
     ];
     
     const faltantes = elementosRequeridos.filter(id => !document.getElementById(id));
@@ -1455,4 +1523,4 @@ window.app = {
     volverAlCalendario: () => app?.volverAlCalendario()
 };
 
-console.log('📱 Versión corregida cargada - Ready para móvil y desktop');
+console.log('📱 Versión con fixes aplicados - Calendario semanal clickable + Estadísticas corregidas');
