@@ -179,61 +179,93 @@
             <!-- Vista Estadísticas -->
             <section id="vista-estadisticas" class="view-section">
                 <h2>Estadísticas</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <i class="fas fa-euro-sign"></i>
-                        <h3>Este Mes</h3>
-                        <p class="stat-value" id="ingresos-mes">€0</p>
+                
+                <!-- 🔧 CORREGIDO: IDs actualizados para coincidir con el JS -->
+                <div id="estadisticas-container" class="stats-container">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-euro-sign"></i>
+                            <h3>Este Mes</h3>
+                            <p class="stat-value" id="total-mes-stats">€0</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-users"></i>
+                            <h3>Estudiantes</h3>
+                            <p class="stat-value" id="total-estudiantes">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-clock"></i>
+                            <h3>Total Clases</h3>
+                            <p class="stat-value" id="total-clases-stats">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Promedio/Clase</h3>
+                            <p class="stat-value" id="promedio-clase">€0</p>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <i class="fas fa-users"></i>
-                        <h3>Estudiantes</h3>
-                        <p class="stat-value" id="total-estudiantes">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-clock"></i>
-                        <h3>Total Clases</h3>
-                        <p class="stat-value" id="total-clases">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-chart-line"></i>
-                        <h3>Promedio/Clase</h3>
-                        <p class="stat-value" id="promedio-clase">€0</p>
-                    </div>
-                </div>
 
-                <div class="stats-section">
-                    <div class="pagos-stats-chart">
-                        <h3>Estadísticas de Pagos</h3>
-                        <div class="pagos-chart">
-                            <div class="chart-item">
-                                <div class="chart-bar">
-                                    <div class="bar-fill success" id="bar-pagados"></div>
+                    <!-- 🔧 NUEVO: Resumen de estados de pago -->
+                    <div class="pagos-resumen">
+                        <h3>Resumen de Pagos</h3>
+                        <div class="resumen-grid">
+                            <div class="resumen-item success">
+                                <i class="fas fa-check-circle"></i>
+                                <div class="resumen-info">
+                                    <span class="resumen-label">Pagadas</span>
+                                    <span class="resumen-value" id="clases-pagadas">0</span>
                                 </div>
-                                <span>Pagados</span>
-                                <strong id="porcentaje-pagados">0%</strong>
                             </div>
-                            <div class="chart-item">
-                                <div class="chart-bar">
-                                    <div class="bar-fill warning" id="bar-pendientes"></div>
+                            <div class="resumen-item warning">
+                                <i class="fas fa-clock"></i>
+                                <div class="resumen-info">
+                                    <span class="resumen-label">Pendientes</span>
+                                    <span class="resumen-value" id="clases-pendientes">0</span>
                                 </div>
-                                <span>Pendientes</span>
-                                <strong id="porcentaje-pendientes">0%</strong>
                             </div>
-                            <div class="chart-item">
-                                <div class="chart-bar">
-                                    <div class="bar-fill danger" id="bar-vencidos"></div>
+                            <div class="resumen-item danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div class="resumen-info">
+                                    <span class="resumen-label">Vencidas</span>
+                                    <span class="resumen-value" id="clases-vencidas">0</span>
                                 </div>
-                                <span>Vencidos</span>
-                                <strong id="porcentaje-vencidos">0%</strong>
                             </div>
                         </div>
                     </div>
 
-                    <div class="top-estudiantes">
-                        <h3>Top Estudiantes</h3>
-                        <div id="lista-top-estudiantes">
-                            <!-- Se generará dinámicamente -->
+                    <div class="stats-section">
+                        <div class="pagos-stats-chart">
+                            <h3>Distribución de Pagos</h3>
+                            <div class="pagos-chart">
+                                <div class="chart-item">
+                                    <div class="chart-bar">
+                                        <div class="bar-fill success" id="bar-pagados"></div>
+                                    </div>
+                                    <span>Pagados</span>
+                                    <strong id="porcentaje-pagados">0%</strong>
+                                </div>
+                                <div class="chart-item">
+                                    <div class="chart-bar">
+                                        <div class="bar-fill warning" id="bar-pendientes"></div>
+                                    </div>
+                                    <span>Pendientes</span>
+                                    <strong id="porcentaje-pendientes">0%</strong>
+                                </div>
+                                <div class="chart-item">
+                                    <div class="chart-bar">
+                                        <div class="bar-fill danger" id="bar-vencidos"></div>
+                                    </div>
+                                    <span>Vencidos</span>
+                                    <strong id="porcentaje-vencidos">0%</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="top-estudiantes">
+                            <h3>Top Estudiantes</h3>
+                            <div id="lista-top-estudiantes">
+                                <!-- Se generará dinámicamente -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -379,6 +411,25 @@
         if (window.location.hostname.includes('github.io')) {
             console.log('🌐 Ejecutando en GitHub Pages');
         }
+
+        // Verificar que todos los IDs críticos existen
+        const idsRequeridos = [
+            'total-mes-stats', 'total-estudiantes', 'total-clases-stats',
+            'clases-pagadas', 'clases-pendientes', 'clases-vencidas',
+            'bar-pagados', 'bar-pendientes', 'bar-vencidos',
+            'porcentaje-pagados', 'porcentaje-pendientes', 'porcentaje-vencidos',
+            'lista-top-estudiantes'
+        ];
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔍 Verificando IDs de estadísticas...');
+            const faltantes = idsRequeridos.filter(id => !document.getElementById(id));
+            if (faltantes.length > 0) {
+                console.error('❌ IDs faltantes:', faltantes);
+            } else {
+                console.log('✅ Todos los IDs de estadísticas presentes');
+            }
+        });
     </script>
     <script src="app.js"></script>
     <!-- Script de debugging (opcional) -->
