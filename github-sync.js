@@ -11,7 +11,7 @@ class GistSync {
         // 5. Click en "Generate token"
         // 6. Copia el token y pégalo aquí abajo
         
-        this.GITHUB_TOKEN = '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';  // ← Pega aquí tu token de GitHub
+        this.GITHUB_TOKEN = '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';  // ← Pega aquí tu token de GitHub
         this.GIST_ID = 'ebc2ac85f2294d5839cba0e35e8b7429';        // ← Pega aquí el ID del Gist
         
         this.FILENAME = 'mis-clases-data.json';
