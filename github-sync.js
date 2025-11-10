@@ -1,43 +1,106 @@
-// ===== MÓDULO DE SINCRONIZACIÓN CON GITHUB GIST Y GESTIÓN DE DATOS =====
+// ===== MÓDULO DE SINCRONIZACIÓN CON GITHUB GIST - VERSIÓN MULTI-DISPOSITIVO =====
 
 class GistSync {
     constructor() {
-        // 🔑 CONFIGURA ESTOS VALORES:
-        // Instrucciones para obtener tu token:
-        // 1. Ve a https://github.com/settings/tokens
-        // 2. Click en "Generate new token" > "Generate new token (classic)"
-        // 3. Dale un nombre (ej: "Mis Clases Sync")
-        // 4. Selecciona el scope "gist"
-        // 5. Click en "Generate token"
-        // 6. Copia el token y pégalo aquí abajo
+        // 🔑 CONFIGURACIÓN DE TOKEN (3 métodos, en orden de prioridad):
+        // 1. localStorage (configurado desde la UI) ← RECOMENDADO para multi-dispositivo
+        // 2. github-config.js (si existe)
+        // 3. Hardcodeado aquí (NO RECOMENDADO para repos públicos)
         
-        this.GITHUB_TOKEN = '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';  // ← Pega aquí tu token de GitHub
-        this.GIST_ID = 'ebc2ac85f2294d5839cba0e35e8b7429';        // ← Pega aquí el ID del Gist
+        // Intentar obtener token de localStorage
+        const tokenGuardado = localStorage.getItem('githubToken');
         
+        // Prioridad: localStorage > GITHUB_CONFIG > hardcodeado
+        this.GITHUB_TOKEN = tokenGuardado || 
+                           (typeof GITHUB_CONFIG !== 'undefined' && GITHUB_CONFIG.TOKEN ? GITHUB_CONFIG.TOKEN : '') ||
+                           '';  // ← Dejar vacío y configurar desde la UI
+        
+        this.GIST_ID = 'ebc2ac85f2294d5839cba0e35e8b7429';
         this.FILENAME = 'mis-clases-data.json';
         this.sincronizando = false;
+        
+        // Log para debugging
+        if (this.GITHUB_TOKEN) {
+            console.log('✅ Token configurado (longitud:', this.GITHUB_TOKEN.length, ')');
+        } else {
+            console.log('ℹ️ Token no configurado. Ve a Config para configurarlo.');
+        }
+    }
+
+    // ===== GESTIÓN DE TOKEN =====
+    
+    // Guardar token en localStorage
+    guardarToken(token) {
+        try {
+            if (!token || !token.trim()) {
+                throw new Error('Token vacío');
+            }
+            
+            const tokenLimpio = token.trim();
+            
+            // Validar formato básico
+            if (!tokenLimpio.startsWith('ghp_')) {
+                throw new Error('El token debe empezar con "ghp_"');
+            }
+            
+            if (tokenLimpio.length !== 40) {
+                throw new Error(`El token debe tener 40 caracteres (tiene ${tokenLimpio.length})`);
+            }
+            
+            localStorage.setItem('githubToken', tokenLimpio);
+            this.GITHUB_TOKEN = tokenLimpio;
+            
+            console.log('✅ Token guardado correctamente');
+            return { success: true, message: 'Token guardado correctamente' };
+            
+        } catch (error) {
+            console.error('❌ Error guardando token:', error);
+            return { success: false, message: error.message };
+        }
+    }
+    
+    // Obtener token actual (ocultando parte por seguridad)
+    obtenerTokenOculto() {
+        if (!this.GITHUB_TOKEN || this.GITHUB_TOKEN.length < 10) {
+            return '';
+        }
+        return this.GITHUB_TOKEN.substring(0, 7) + '...' + this.GITHUB_TOKEN.substring(this.GITHUB_TOKEN.length - 4);
+    }
+    
+    // Verificar si hay token configurado
+    tieneToken() {
+        return this.GITHUB_TOKEN && this.GITHUB_TOKEN.length === 40;
+    }
+    
+    // Eliminar token guardado
+    eliminarToken() {
+        localStorage.removeItem('githubToken');
+        this.GITHUB_TOKEN = '';
+        console.log('🗑️ Token eliminado');
+        return { success: true, message: 'Token eliminado correctamente' };
     }
 
     // Verificar configuración
     verificarConfiguracion() {
         if (!this.GITHUB_TOKEN || !this.GIST_ID) {
-            console.error('❌ Debes configurar GITHUB_TOKEN y GIST_ID en github-sync.js');
+            console.error('❌ Configuración incompleta');
             return false;
         }
         return true;
     }
 
+    // ===== SINCRONIZACIÓN CON GITHUB =====
+    
     // Guardar datos en GitHub
     async guardarEnNube() {
         if (!this.verificarConfiguracion()) {
-            alert(
-                '⚠️ Configuración incompleta\n\n' +
-                'Para usar la sincronización con GitHub, debes:\n\n' +
-                '1. Crear un token en GitHub (Settings > Developer settings > Personal access tokens)\n' +
-                '2. Crear un Gist en https://gist.github.com\n' +
-                '3. Configurar GITHUB_TOKEN y GIST_ID en el archivo github-sync.js\n\n' +
-                'Consulta la documentación para más detalles.'
-            );
+            const mensaje = !this.GITHUB_TOKEN ? 
+                'Token no configurado. Ve a Config → Configurar Token de GitHub' :
+                'ID del Gist no configurado';
+            
+            if (window.app) {
+                window.app.mostrarToast(mensaje, 'error');
+            }
             return false;
         }
 
@@ -79,6 +142,11 @@ class GistSync {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Token inválido o revocado. Por favor, configura un nuevo token.');
+                } else if (response.status === 404) {
+                    throw new Error('Gist no encontrado. Verifica el ID del Gist.');
+                }
                 const errorData = await response.json();
                 throw new Error(`Error HTTP ${response.status}: ${errorData.message || 'Error desconocido'}`);
             }
@@ -103,14 +171,13 @@ class GistSync {
     // Cargar datos desde GitHub
     async cargarDesdeNube() {
         if (!this.verificarConfiguracion()) {
-            alert(
-                '⚠️ Configuración incompleta\n\n' +
-                'Para usar la sincronización con GitHub, debes:\n\n' +
-                '1. Crear un token en GitHub (Settings > Developer settings > Personal access tokens)\n' +
-                '2. Crear un Gist en https://gist.github.com\n' +
-                '3. Configurar GITHUB_TOKEN y GIST_ID en el archivo github-sync.js\n\n' +
-                'Consulta la documentación para más detalles.'
-            );
+            const mensaje = !this.GITHUB_TOKEN ? 
+                'Token no configurado. Ve a Config → Configurar Token de GitHub' :
+                'ID del Gist no configurado';
+            
+            if (window.app) {
+                window.app.mostrarToast(mensaje, 'error');
+            }
             return false;
         }
 
@@ -120,7 +187,7 @@ class GistSync {
         }
 
         this.sincronizando = true;
-        console.log('🔄 Cargando desde GitHub Gist...');
+        console.log('📥 Cargando desde GitHub Gist...');
 
         try {
             // Obtener datos de GitHub
@@ -133,6 +200,11 @@ class GistSync {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Token inválido o revocado. Por favor, configura un nuevo token.');
+                } else if (response.status === 404) {
+                    throw new Error('Gist no encontrado. Verifica el ID del Gist.');
+                }
                 const errorData = await response.json();
                 throw new Error(`Error HTTP ${response.status}: ${errorData.message || 'Error desconocido'}`);
             }
@@ -171,19 +243,6 @@ class GistSync {
 
     // Obtener información del último guardado
     async obtenerInfoUltimaSync() {
-        if (!this.verificarConfiguracion()) {
-            // Intentar obtener info local
-            const ultimaSync = localStorage.getItem('ultimaSincronizacion');
-            if (ultimaSync) {
-                return {
-                    ultimaActualizacion: ultimaSync,
-                    tamaño: new Blob([localStorage.getItem('misClases') || '[]']).size,
-                    tipo: 'local'
-                };
-            }
-            return null;
-        }
-
         try {
             const url = `https://api.github.com/gists/${this.GIST_ID}`;
             const response = await fetch(url, {
@@ -205,6 +264,17 @@ class GistSync {
 
         } catch (error) {
             console.error('Error obteniendo info:', error);
+            
+            // Intentar obtener info local
+            const ultimaSync = localStorage.getItem('ultimaSincronizacion');
+            if (ultimaSync) {
+                return {
+                    ultimaActualizacion: ultimaSync,
+                    tamaño: new Blob([localStorage.getItem('misClases') || '[]']).size,
+                    tipo: 'local'
+                };
+            }
+            
             return null;
         }
     }
@@ -214,6 +284,74 @@ class GistSync {
 const gistSync = new GistSync();
 
 // ===== FUNCIONES GLOBALES PARA EL HTML =====
+
+// Configurar token desde la UI
+function configurarTokenGitHub() {
+    const token = document.getElementById('input-github-token')?.value;
+    
+    if (!token || !token.trim()) {
+        if (window.app) {
+            window.app.mostrarToast('Por favor ingresa un token', 'error');
+        }
+        return;
+    }
+    
+    const resultado = gistSync.guardarToken(token);
+    
+    if (window.app) {
+        window.app.mostrarToast(resultado.message, resultado.success ? 'success' : 'error');
+    }
+    
+    if (resultado.success) {
+        actualizarInfoToken();
+        // Limpiar el input por seguridad
+        const input = document.getElementById('input-github-token');
+        if (input) input.value = '';
+    }
+}
+
+// Eliminar token configurado
+function eliminarTokenGitHub() {
+    if (!confirm('¿Estás seguro de eliminar el token configurado?\n\nDeberás configurarlo nuevamente para usar la sincronización.')) {
+        return;
+    }
+    
+    const resultado = gistSync.eliminarToken();
+    
+    if (window.app) {
+        window.app.mostrarToast(resultado.message, resultado.success ? 'success' : 'error');
+    }
+    
+    actualizarInfoToken();
+}
+
+// Actualizar información del token en la UI
+function actualizarInfoToken() {
+    const tokenInfoDiv = document.getElementById('info-token-actual');
+    if (!tokenInfoDiv) return;
+    
+    if (gistSync.tieneToken()) {
+        tokenInfoDiv.innerHTML = `
+            <div class="config-info">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <strong>Token configurado:</strong> ${gistSync.obtenerTokenOculto()}<br>
+                    <small>La sincronización con GitHub está disponible</small>
+                </div>
+            </div>
+        `;
+    } else {
+        tokenInfoDiv.innerHTML = `
+            <div class="config-info warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Token no configurado</strong><br>
+                    <small>Configura tu token para usar la sincronización con GitHub</small>
+                </div>
+            </div>
+        `;
+    }
+}
 
 // Sincronizar con GitHub (guardar)
 async function sincronizarConGitHub() {
@@ -324,6 +462,7 @@ async function verInfoSync() {
     }
 }
 
+// [El resto del código de exportarDatos, importarDatos, etc. permanece igual...]
 // Exportar datos localmente
 function exportarDatos() {
     try {
@@ -335,11 +474,9 @@ function exportarDatos() {
             return;
         }
 
-        // Crear blob con los datos
         const blob = new Blob([datos], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
-        // Crear enlace de descarga
         const a = document.createElement('a');
         a.href = url;
         a.download = `mis-clases-backup-${new Date().toISOString().split('T')[0]}.json`;
@@ -349,7 +486,7 @@ function exportarDatos() {
         URL.revokeObjectURL(url);
         
         if (window.app) {
-            app.mostrarToast(`✅ Exportados ${clases.length} clases correctamente`, 'success');
+            app.mostrarToast(`✅ Exportadas ${clases.length} clases correctamente`, 'success');
         }
         
         console.log(`✅ Exportadas ${clases.length} clases`);
@@ -366,7 +503,6 @@ function importarDatos(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Verificar que sea un archivo JSON
     if (!file.name.endsWith('.json')) {
         alert('⚠️ Por favor selecciona un archivo JSON válido');
         return;
@@ -379,12 +515,10 @@ function importarDatos(event) {
             const contenido = e.target.result;
             const datos = JSON.parse(contenido);
             
-            // Validar que sea un array
             if (!Array.isArray(datos)) {
                 throw new Error('Formato de datos inválido');
             }
 
-            // Preguntar confirmación
             const datosActuales = localStorage.getItem('misClases');
             const clasesActuales = datosActuales ? JSON.parse(datosActuales).length : 0;
             
@@ -395,22 +529,18 @@ function importarDatos(event) {
             mensaje += '¿Deseas continuar?';
             
             if (!confirm(mensaje)) {
-                // Limpiar el input
                 event.target.value = '';
                 return;
             }
 
-            // Guardar datos
             localStorage.setItem('misClases', contenido);
             
-            // Recargar app
             if (window.app) {
                 app.clases = app.cargarClases();
                 app.actualizarVistas();
                 app.mostrarToast(`✅ Importadas ${datos.length} clases correctamente`, 'success');
             }
             
-            // Actualizar info de configuración
             actualizarInfoConfig();
             
             console.log(`✅ Importadas ${datos.length} clases`);
@@ -419,7 +549,6 @@ function importarDatos(event) {
             console.error('Error importando datos:', error);
             alert('❌ Error al importar datos:\n\n' + error.message + '\n\nAsegúrate de seleccionar un archivo de backup válido.');
         } finally {
-            // Limpiar el input
             event.target.value = '';
         }
     };
@@ -451,7 +580,6 @@ function borrarTodosDatos() {
     
     if (!confirmar1) return;
 
-    // Segunda confirmación
     const confirmar2 = confirm(
         `⚠️ ÚLTIMA CONFIRMACIÓN\n\n` +
         `Escribe OK si realmente quieres BORRAR TODO.\n\n` +
@@ -461,11 +589,9 @@ function borrarTodosDatos() {
     if (!confirmar2) return;
 
     try {
-        // Borrar datos
         localStorage.removeItem('misClases');
         localStorage.removeItem('ultimaSincronizacion');
         
-        // Recargar app
         if (window.app) {
             app.clases = [];
             app.guardarClases();
@@ -473,12 +599,10 @@ function borrarTodosDatos() {
             app.mostrarToast('✅ Todos los datos han sido eliminados', 'success');
         }
         
-        // Actualizar info de configuración
         actualizarInfoConfig();
         
         console.log('✅ Datos borrados correctamente');
         
-        // Cambiar a vista lista
         if (window.app) {
             app.cambiarVista('lista');
         }
@@ -499,19 +623,16 @@ function actualizarInfoConfig() {
         const tamaño = new Blob([datos]).size;
         const ultimaSync = localStorage.getItem('ultimaSincronizacion');
         
-        // Total de clases
         const totalClasesElem = document.getElementById('total-clases-config');
         if (totalClasesElem) {
             totalClasesElem.textContent = clases.length;
         }
         
-        // Tamaño de datos
         const tamañoDatosElem = document.getElementById('tamaño-datos');
         if (tamañoDatosElem) {
             tamañoDatosElem.textContent = (tamaño / 1024).toFixed(2) + ' KB';
         }
         
-        // Última actualización
         const ultimaActElem = document.getElementById('ultima-actualizacion');
         if (ultimaActElem) {
             if (ultimaSync) {
@@ -527,34 +648,16 @@ function actualizarInfoConfig() {
                 ultimaActElem.textContent = 'Nunca';
             }
         }
+        
+        actualizarInfoToken();
+        
     } catch (error) {
         console.error('Error actualizando info de configuración:', error);
     }
 }
 
-// ===== INTEGRACIÓN CON CLASEMANAGER =====
-
-// Agregar métodos al ClaseManager cuando esté disponible
-if (typeof ClaseManager !== 'undefined') {
-    
-    // Sincronización automática después de guardar
-    const guardarOriginal = ClaseManager.prototype.guardarClases;
-    ClaseManager.prototype.guardarClases = function() {
-        guardarOriginal.call(this);
-        
-        // Actualizar info de configuración si estamos en esa vista
-        const vistaConfig = document.getElementById('vista-config');
-        if (vistaConfig && vistaConfig.classList.contains('active')) {
-            actualizarInfoConfig();
-        }
-    };
-    
-    console.log('✅ Integración con ClaseManager completada');
-}
-
-// Actualizar info cuando se carga la vista de configuración
+// Inicializar cuando se carga la vista de configuración
 document.addEventListener('DOMContentLoaded', () => {
-    // Observar cambios de vista
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.target.id === 'vista-config' && mutation.target.classList.contains('active')) {
@@ -569,5 +672,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log('☁️ Módulo de sincronización con GitHub Gist cargado');
-console.log('📝 Configura GITHUB_TOKEN y GIST_ID en github-sync.js para usar la sincronización');
+console.log('☁️ Módulo de sincronización con GitHub Gist cargado (versión multi-dispositivo)');
+console.log('💡 Configura tu token desde Config → Configurar Token de GitHub');
