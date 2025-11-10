@@ -169,9 +169,10 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
+    min-height: 38px;
 }
 
 .btn-primary:hover {
@@ -242,8 +243,9 @@ body {
 }
 
 .btn-sm {
-    padding: 0.375rem 0.75rem;
+    padding: 0.5rem 0.875rem;
     font-size: 0.875rem;
+    min-height: 36px;
 }
 
 /* ===== FILTROS Y BÚSQUEDA ===== */
@@ -1774,9 +1776,25 @@ body {
         gap: var(--spacing-md);
     }
     
+    /* FIX: Calendario mensual en móvil - reducir tamaño de fuente y padding */
     .calendario-grid.mes .dia-calendario {
         min-height: 80px;
-        padding: 0.25rem;
+        padding: 0.2rem;
+    }
+    
+    .calendario-grid.mes .dia-numero {
+        font-size: 0.75rem;
+        margin-bottom: 0.125rem;
+    }
+    
+    .calendario-grid.mes .clase-calendario {
+        font-size: 0.55rem;
+        padding: 1px 2px;
+    }
+    
+    .calendario-grid.mes .dia-cabecera {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.25rem;
     }
     
     .form-actions {
@@ -1909,18 +1927,19 @@ body {
         margin: var(--spacing-md);
     }
     
+    /* FIX: Calendario mensual muy pequeño */
     .calendario-grid.mes .dia-calendario {
-        min-height: 60px;
-        padding: 0.25rem;
+        min-height: 70px;
+        padding: 0.15rem;
     }
     
-    .dia-numero {
-        font-size: 0.9rem;
-    }
-    
-    .clase-calendario {
+    .calendario-grid.mes .dia-numero {
         font-size: 0.7rem;
-        padding: 1px 3px;
+    }
+    
+    .calendario-grid.mes .clase-calendario {
+        font-size: 0.5rem;
+        padding: 1px;
     }
     
     .clase-dia {
