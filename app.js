@@ -1,4 +1,4 @@
-// ===== GESTIÓN DE CLASES CON SISTEMA DE PAGOS - VERSIÓN CORREGIDA =====
+// ===== GESTIÓN DE CLASES CON SISTEMA DE PAGOS - VERSIÓN MEJORADA =====
 
 // 🔧 FIX 1: Prevenir múltiples inicializaciones
 let appInstancia = null;
@@ -95,7 +95,10 @@ class ClaseManager {
 
             this.clases.push(nuevaClase);
             this.guardarClases();
-            this.actualizarVistas();
+            
+            // Actualizar TODAS las vistas inmediatamente
+            this.actualizarTodasLasVistas();
+            
             this.mostrarToast('Clase agregada correctamente');
         } catch (error) {
             console.error('Error agregando clase:', error);
@@ -119,7 +122,10 @@ class ClaseManager {
                     notasPago: datosClase.notasPago || ''
                 };
                 this.guardarClases();
-                this.actualizarVistas();
+                
+                // Actualizar TODAS las vistas inmediatamente
+                this.actualizarTodasLasVistas();
+                
                 this.mostrarToast('Clase actualizada correctamente');
             }
         } catch (error) {
@@ -132,7 +138,10 @@ class ClaseManager {
         try {
             this.clases = this.clases.filter(clase => clase.id !== id);
             this.guardarClases();
-            this.actualizarVistas();
+            
+            // Actualizar TODAS las vistas inmediatamente
+            this.actualizarTodasLasVistas();
+            
             this.mostrarToast('Clase eliminada correctamente');
         } catch (error) {
             console.error('Error eliminando clase:', error);
@@ -151,7 +160,10 @@ class ClaseManager {
                 this.clases[index].notasPago = datosPago.notasPago || '';
                 
                 this.guardarClases();
-                this.actualizarVistas();
+                
+                // Actualizar TODAS las vistas inmediatamente
+                this.actualizarTodasLasVistas();
+                
                 this.mostrarToast('Pago registrado correctamente', 'success');
             }
         } catch (error) {
@@ -170,7 +182,10 @@ class ClaseManager {
                 this.clases[index].notasPago = '';
                 
                 this.guardarClases();
-                this.actualizarVistas();
+                
+                // Actualizar TODAS las vistas inmediatamente
+                this.actualizarTodasLasVistas();
+                
                 this.mostrarToast('Pago marcado como pendiente');
             }
         } catch (error) {
@@ -366,7 +381,7 @@ class ClaseManager {
             if (e.key === 'misClases') {
                 console.log('🔄 Datos actualizados en otra pestaña, recargando...');
                 this.clases = this.cargarClases();
-                this.actualizarVistas();
+                this.actualizarTodasLasVistas();
                 this.mostrarToast('Datos sincronizados', 'success');
             }
         });
@@ -378,7 +393,7 @@ class ClaseManager {
             if (datosActuales !== datosMemoria) {
                 console.log('🔄 Detectados cambios, sincronizando...');
                 this.clases = this.cargarClases();
-                this.actualizarVistas();
+                this.actualizarTodasLasVistas();
             }
         }, 5000);
     }
@@ -588,15 +603,28 @@ class ClaseManager {
         }
     }
 
-    actualizarVistas() {
+    // Nueva función para actualizar TODAS las vistas inmediatamente
+    actualizarTodasLasVistas() {
         try {
             this.actualizarEstadisticasHeader();
             this.renderizarListaClases();
             this.renderizarVistaPagos();
             this.actualizarEstadisticas();
+            
+            // Si estamos en la vista de calendario, actualizarla también
+            const vistaCalendario = document.getElementById('vista-calendario');
+            if (vistaCalendario && vistaCalendario.classList.contains('active')) {
+                this.renderizarCalendario();
+            }
+            
+            console.log('✅ Todas las vistas actualizadas');
         } catch (error) {
-            console.error('Error actualizando vistas:', error);
+            console.error('Error actualizando todas las vistas:', error);
         }
+    }
+
+    actualizarVistas() {
+        this.actualizarTodasLasVistas();
     }
 
     actualizarEstadisticasHeader() {
@@ -837,8 +865,9 @@ class ClaseManager {
                     <div class="dia-numero">${dia}</div>
                     ${clasesDelDia.map(clase => {
                         const estadoPago = this.obtenerEstadoPago(clase);
+                        const hora = this.formatearHora(clase.fecha);
                         return `<div class="clase-calendario ${estadoPago}">
-                            ${this.escaparHtml(clase.estudiante)}
+                            ${hora} - ${this.escaparHtml(clase.estudiante)}
                         </div>`;
                     }).join('')}
                 </div>
@@ -876,14 +905,14 @@ class ClaseManager {
             const fechaStr = `${año}-${mes}-${diaNum}`;
 
             html += `
-                <div class="dia-semana ${esHoy ? 'hoy' : ''}" style="cursor: pointer;">
-                    <div class="dia-semana-header" onclick="app.mostrarVistaDelDia('${fechaStr}')">
+                <div class="dia-semana ${esHoy ? 'hoy' : ''}" onclick="app.mostrarVistaDelDia('${fechaStr}')" style="cursor: pointer;">
+                    <div class="dia-semana-header">
                         <div class="dia-semana-nombre">${dia.toLocaleDateString('es-ES', { weekday: 'short' })}</div>
                         <div class="dia-semana-numero">${dia.getDate()}</div>
                     </div>
-                    <div class="clases-semana" onclick="app.mostrarVistaDelDia('${fechaStr}')">
+                    <div class="clases-semana">
                         ${clasesDelDia.length === 0 ? 
-                            '<div class="sin-clases">Sin clases<br><small style="opacity: 0.7; font-size: 0.85em;">Click para agregar</small></div>' :
+                            '<div class="sin-clases" style="opacity: 0.5;">Sin clases</div>' :
                             clasesDelDia.map(clase => {
                                 const estadoPago = this.obtenerEstadoPago(clase);
                                 return `
@@ -1419,7 +1448,7 @@ class ClaseManager {
 let app;
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Inicializando Mis Clases (Versión con Fixes de Calendario y Estadísticas)...');
+    console.log('🚀 Iniciando Mis Clases (Versión Mejorada)...');
     
     const elementosRequeridos = [
         'lista-clases', 'calendario', 'lista-pagos', 
@@ -1454,4 +1483,4 @@ window.app = {
     volverAlCalendario: () => app?.volverAlCalendario()
 };
 
-console.log('📱 Versión con fixes aplicados - Calendario semanal clickable + Estadísticas corregidas');
+console.log('📱 Versión mejorada con actualización instantánea y mejoras en calendarios');
