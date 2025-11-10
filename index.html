@@ -287,6 +287,46 @@
                         </button>
                     </div>
                     
+                    <!-- Estado del Token -->
+                    <div id="info-token-actual" class="config-info warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Token no configurado</strong><br>
+                            <small>Configura tu token para usar la sincronización con GitHub</small>
+                        </div>
+                    </div>
+
+                    <!-- Configurar Token -->
+                    <div class="config-card">
+                        <div class="config-description">
+                            <i class="fas fa-key"></i>
+                            <div>
+                                <h4>Configurar Token de GitHub</h4>
+                                <p>Introduce tu Personal Access Token de GitHub para habilitar la sincronización. El token se guardará de forma segura en tu dispositivo.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; min-width: 300px;">
+                            <input type="password" id="input-github-token" placeholder="ghp_..." style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--border-radius); font-size: 0.9rem;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn-primary" onclick="configurarTokenGitHub()" style="flex: 1;">
+                                    <i class="fas fa-save"></i> Guardar Token
+                                </button>
+                                <button class="btn-danger" onclick="eliminarTokenGitHub()">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ayuda para obtener token -->
+                    <div class="config-info">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>¿Cómo obtener un token?</strong><br>
+                            GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token. Marca solo el scope <code>gist</code>.
+                        </div>
+                    </div>
+                    
                     <div class="config-card">
                         <div class="config-description">
                             <i class="fas fa-cloud-upload-alt"></i>
@@ -317,13 +357,6 @@
                         <i class="fas fa-lightbulb"></i>
                         <div>
                             <strong>Consejo:</strong> Guarda regularmente en GitHub para mantener tus datos seguros. Si usas múltiples dispositivos, carga los datos al inicio y guarda al finalizar.
-                        </div>
-                    </div>
-
-                    <div class="config-info warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <div>
-                            <strong>Configuración requerida:</strong> Para usar esta función, debes configurar tu token de GitHub y el ID del Gist en el archivo <code>github-sync.js</code>. Consulta la documentación para más detalles.
                         </div>
                     </div>
                 </div>
@@ -401,7 +434,7 @@
                     <h3><i class="fas fa-info-circle"></i> Acerca de</h3>
                     <div class="config-about">
                         <div class="about-item">
-                            <strong>Versión:</strong> 2.0.0
+                            <strong>Versión:</strong> 2.1.0
                         </div>
                         <div class="about-item">
                             <strong>Última actualización:</strong> Noviembre 2025
@@ -414,6 +447,7 @@
                                 <li>Calendario mensual y semanal</li>
                                 <li>Estadísticas detalladas</li>
                                 <li>Sincronización en la nube con GitHub</li>
+                                <li>Configuración de token desde cualquier dispositivo</li>
                                 <li>Responsive design para móviles</li>
                             </ul>
                         </div>
