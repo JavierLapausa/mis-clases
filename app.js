@@ -83,7 +83,7 @@ class ClaseManager {
         try {
             const nuevaClase = {
                 id: this.generarId(),
-                estudiante: datosClase.estudiante,
+                estudiante: datosClase.estudiante.trim(),
                 fecha: new Date(datosClase.fecha + 'T' + datosClase.hora),
                 precio: parseFloat(datosClase.precio),
                 observaciones: datosClase.observaciones || '',
@@ -112,7 +112,7 @@ class ClaseManager {
             if (index !== -1) {
                 this.clases[index] = {
                     ...this.clases[index],
-                    estudiante: datosClase.estudiante,
+                    estudiante: datosClase.estudiante.trim(),
                     fecha: new Date(datosClase.fecha + 'T' + datosClase.hora),
                     precio: parseFloat(datosClase.precio),
                     observaciones: datosClase.observaciones || '',
@@ -1076,7 +1076,7 @@ class ClaseManager {
 
             console.log(`💰 Total mes: €${totalMes.toFixed(2)}`);
 
-            const totalEstudiantes = new Set(this.clases.map(c => c.estudiante)).size;
+            const totalEstudiantes = new Set(this.clases.map(c => c.estudiante.trim())).size;
             console.log(`👥 Estudiantes únicos: ${totalEstudiantes}`);
 
             const clasesPagadas = this.clases.filter(c => this.obtenerEstadoPago(c) === 'pagado').length;
@@ -1097,6 +1097,11 @@ class ClaseManager {
             this.actualizarElemento('total-mes-stats', `€${totalMes.toFixed(2)}`);
             this.actualizarElemento('total-estudiantes', totalEstudiantes.toString());
             this.actualizarElemento('total-clases-stats', this.clases.length.toString());
+            
+            // 🔧 FIX: Calcular promedio por clase
+            const promedio = clasesMes.length > 0 ? totalMes / clasesMes.length : 0;
+            this.actualizarElemento('promedio-clase', `€${promedio.toFixed(2)}`);
+            console.log(`📊 Promedio por clase: €${promedio.toFixed(2)}`);
 
             this.actualizarElemento('clases-pagadas', clasesPagadas.toString());
             this.actualizarElemento('clases-pendientes', clasesPendientes.toString());
@@ -1139,18 +1144,21 @@ class ClaseManager {
             return;
         }
 
+        // 🔧 FIX: Normalizar nombres con trim() para evitar duplicados
         const estudianteStats = {};
 
         this.clases.forEach(clase => {
-            if (!estudianteStats[clase.estudiante]) {
-                estudianteStats[clase.estudiante] = {
+            const nombreNormalizado = clase.estudiante.trim();
+            
+            if (!estudianteStats[nombreNormalizado]) {
+                estudianteStats[nombreNormalizado] = {
                     total: 0,
                     clases: 0
                 };
             }
-            estudianteStats[clase.estudiante].clases++;
+            estudianteStats[nombreNormalizado].clases++;
             if (clase.estadoPago === 'pagado') {
-                estudianteStats[clase.estudiante].total += clase.precio;
+                estudianteStats[nombreNormalizado].total += clase.precio;
             }
         });
 
